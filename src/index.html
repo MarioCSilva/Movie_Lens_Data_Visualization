@@ -1,0 +1,142 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="text/javascript" src="http://d3js.org/d3.v6.js"></script>
+    <!-- <script type="module" src="js/loadDataSet.js"></script> -->
+    <title>MovieLens Data Visualization</title>
+</head>
+
+<body>
+    <h1>overviews e redirects</h1>
+
+    <div id="scatter_movies"></div>
+
+    <script>
+        let movies = {};
+
+        let movie_popularity = {};
+        
+        var max_num_reviews = 0;
+        
+        // set the dimensions and margins of the graph
+        var margin = {top: 10, right: 30, bottom: 30, left: 60},
+            width = 460 - margin.left - margin.right,
+            height = 400 - margin.top - margin.bottom;
+
+        // append the svg object to the body of the page
+        const svg = d3.select("#scatter_movies")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+
+        // Preprocess movies
+        // Uses global variable movies
+        // dataset: movieId,title,genres
+        function preProcessMovies(data) {
+            for (let i = 0; i < data.length; i++) {
+                genres = data[i].genres.split('|')
+                movies[data[i].movieId] = { 'title': data[i].title, 'genres': genres }
+            }
+        }
+
+        function drawScatterPlot(movie_popularity) {
+            // Add X axis
+            console.log(max_num_reviews)
+            const x = d3.scaleLinear()
+                .domain([0, max_num_reviews])
+                .range([0, width]);
+
+            svg.append("g")
+                .attr("transform", `translate(0, ${height})`)
+                .call(d3.axisBottom(x));
+
+            const y = d3.scaleLinear()
+                .domain([0, 5])
+                .range([height, 0]);
+            svg.append("g")
+                .call(d3.axisLeft(y));
+
+            
+            // Add dots
+            svg.append('g')
+                .selectAll("dot")
+                .data(movie_popularity.entries())
+                .join("circle")
+                    .attr("cx", function (d) { return x(d[1].num_reviews); })
+                    .attr("cy", function (d) { return y(d[1].avg); })
+                    .attr("r", 1.5)
+                    .style("fill", "#69b3a2")
+        }
+
+        // dataset: userId,movieId,rating,timestamp
+        function preProcessRatings(data) {
+            ratings = [];
+
+            for (let i = 0; i < data.length; i++) {
+                movie_id = data[i].movieId
+                ratings.push(data[i]);
+                if (!movie_popularity[movie_id]) {
+                    movie_popularity[movie_id] = {
+                        'avg': parseInt(data[i].rating),
+                        'num_reviews': 1,
+                        'ratings': [parseInt(data[i].rating)]
+                    }
+                }
+                else {
+                    movie_popularity[movie_id].num_reviews = movie_popularity[movie_id].num_reviews + 1
+                    movie_popularity[movie_id].ratings.push(parseInt(data[i].rating))
+                    if (movie_popularity[movie_id].num_reviews > max_num_reviews){
+                        max_num_reviews= movie_popularity[movie_id].num_reviews
+                    }
+                }
+            }
+
+            for (let movie in movie_popularity) {
+                ratings = movie_popularity[movie].ratings
+                sum = ratings.reduce((a, b) => a + b, 0)
+                movie_popularity[movie].avg = sum / ratings.length
+            }
+
+            return movie_popularity
+        }
+
+        // dataset: userId,movieId,tag,timestamp
+        function preProcessTags(data) {
+            tags = []
+            for (let i = 0; i < data.length; i++) {
+                tags.push(data[i]);
+            }
+            return tags
+        }
+
+        function draw() {
+            d3.csv("../dataset/ml-latest-small/ratings.csv")
+                .then((data) => {
+                    movie_popularity = preProcessRatings(data)
+                    movies_pop_arr = Object.values(movie_popularity)
+                    drawScatterPlot(movies_pop_arr)
+                }).catch(err => { console.log(err) });
+
+            d3.csv("../dataset/ml-latest-small/tags.csv")
+                .then((data) => {
+                    tags = preProcessTags(data)
+                }).catch(err => { console.log(err) });
+        }
+
+        // initial load of data that only will be executed once
+        d3.csv("../dataset/ml-latest-small/movies.csv")
+            .then((data) => {
+                preProcessMovies(data)
+                draw()
+            }).catch(err => { console.log(err) });
+
+    </script>
+</body>
+
+</html>
