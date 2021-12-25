@@ -5,14 +5,17 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script type="text/javascript" src="http://d3js.org/d3.v6.js"></script>
-    <!-- <script type="module" src="js/loadDataSet.js"></script> -->
+
+    <!-- for word cloud -->
+    <script src="./js/cloud.js"></script>
+    
     <title>MovieLens Data Visualization</title>
 </head>
 
 <body>
-    <h1>overviews e redirects</h1>
-
     <div id="scatter_movies"></div>
+    <div id="word_cloud_tags"></div>
+
 
     <script>
         let movies = {};
@@ -47,7 +50,6 @@
 
         function drawScatterPlot(movie_popularity) {
             // Add X axis
-            console.log(max_num_reviews)
             const x = d3.scaleLinear()
                 .domain([0, max_num_reviews])
                 .range([0, width]);
@@ -106,31 +108,93 @@
             return movie_popularity
         }
 
+        
+        function drawWordCloud(tags){
+            var svg_location = "#word_cloud_tags";
+            var stop_words = "i,me,my,myself,we,us,our,ours,ourselves,you,your,yours,yourself,yourselves,he,him,his,himself,she,her,hers,herself,it,its,itself,they,them,their,theirs,themselves,what,which,who,whom,whose,this,that,these,those,am,is,are,was,were,be,been,being,have,has,had,having,do,does,did,doing,will,would,should,can,could,ought,i'm,you're,he's,she's,it's,we're,they're,i've,you've,we've,they've,i'd,you'd,he'd,she'd,we'd,they'd,i'll,you'll,he'll,she'll,we'll,they'll,isn't,aren't,wasn't,weren't,hasn't,haven't,hadn't,doesn't,don't,didn't,won't,wouldn't,shan't,shouldn't,can't,cannot,couldn't,mustn't,let's,that's,who's,what's,here's,there's,when's,where's,why's,how's,a,an,the,and,but,if,or,because,as,until,while,of,at,by,for,with,about,against,between,into,through,during,before,after,above,below,to,from,up,upon,down,in,out,on,off,over,under,again,further,then,once,here,there,when,where,why,how,all,any,both,each,few,more,most,other,some,such,no,nor,not,only,own,same,so,than,too,very,say,says,said,shall,poop";
+
+            var fill = d3.scaleOrdinal(d3.schemeCategory10);
+            var width = document.body.clientWidth;
+            var height = 400;
+
+            d3.layout.cloud()
+                .size([width, height])
+                .words(
+                    Object.keys(tags)
+                    .map(function(tag) {
+                        return {text: tag, size: tags[tag]};
+                    }))
+                .padding(5)
+                .font("Impact")
+                .fontSize(function(tag) { 
+                    return tag.size; })
+                .on("end", drawTags)
+                .start();
+            
+            function drawTags(tags) {
+                d3.select(svg_location).append("svg")
+                    .attr("width", width)
+                    .attr("height", height)
+                    .append("g")
+                        .attr("transform", "translate(" + [width >> 1, height >> 1] + ")")
+                    .selectAll("text")
+                    .data(tags)
+                    .enter()
+                        .append("text")
+                        .style("font-size", function(d) { return d.size + "px"; })
+                        .style("font-family", "Impact")
+                        .attr("text-anchor", "middle")
+                        .style("fill", function(d, i) { return fill(i); })
+                        .attr("transform", function(d) {
+                            return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+                        })
+                        .text(function(d) { return d.text; });
+            }
+
+            d3.layout.cloud().stop();
+        }
+
+        // scale x into a range [a, b]
+        function scaleData(a, b, min, max, tags) {
+            for (const [key, x] of Object.entries(tags)) {
+                tags[key] = (b - a) * ((x - min) / (max - min)) + a
+            }
+        }
+
         // dataset: userId,movieId,tag,timestamp
         function preProcessTags(data) {
-            tags = []
-            for (let i = 0; i < data.length; i++) {
-                tags.push(data[i]);
+            tags = {}
+            for (var i = 0; i < data.length; i++) {
+                if (!tags[data[i].tag]) {
+                    tags[data[i].tag] = 1;
+                } else {
+                    tags[data[i].tag] += 1;
+                }
             }
+            min = Math.min(...Object.values(tags))
+            max = Math.max(...Object.values(tags))
+            scaleData(5, 70, min, max, tags)
             return tags
         }
 
+
         function draw() {
-            d3.csv("../dataset/ml-latest-small/ratings.csv")
+            d3.csv("../dataset/ratings.csv")
                 .then((data) => {
                     movie_popularity = preProcessRatings(data)
                     movies_pop_arr = Object.values(movie_popularity)
                     drawScatterPlot(movies_pop_arr)
                 }).catch(err => { console.log(err) });
 
-            d3.csv("../dataset/ml-latest-small/tags.csv")
+            d3.csv("../dataset/tags.csv")
                 .then((data) => {
-                    tags = preProcessTags(data)
+                    tags = preProcessTags(data);
+                    drawWordCloud(tags);
                 }).catch(err => { console.log(err) });
         }
 
         // initial load of data that only will be executed once
-        d3.csv("../dataset/ml-latest-small/movies.csv")
+        d3.csv("../dataset/movies.csv")
             .then((data) => {
                 preProcessMovies(data)
                 draw()
