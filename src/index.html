@@ -23,7 +23,12 @@
         let movie_popularity = {};
         
         var max_num_reviews = 0;
-        
+
+        // for word cloud of most popular tags
+        var max_num_tags = 50;
+        var tags_height = 600;
+        var tags_width = document.body.clientWidth;
+
         // set the dimensions and margins of the graph
         var margin = {top: 10, right: 30, bottom: 30, left: 60},
             width = 460 - margin.left - margin.right,
@@ -110,21 +115,15 @@
 
         
         function drawWordCloud(tags){
-            var svg_location = "#word_cloud_tags";
-            var stop_words = "i,me,my,myself,we,us,our,ours,ourselves,you,your,yours,yourself,yourselves,he,him,his,himself,she,her,hers,herself,it,its,itself,they,them,their,theirs,themselves,what,which,who,whom,whose,this,that,these,those,am,is,are,was,were,be,been,being,have,has,had,having,do,does,did,doing,will,would,should,can,could,ought,i'm,you're,he's,she's,it's,we're,they're,i've,you've,we've,they've,i'd,you'd,he'd,she'd,we'd,they'd,i'll,you'll,he'll,she'll,we'll,they'll,isn't,aren't,wasn't,weren't,hasn't,haven't,hadn't,doesn't,don't,didn't,won't,wouldn't,shan't,shouldn't,can't,cannot,couldn't,mustn't,let's,that's,who's,what's,here's,there's,when's,where's,why's,how's,a,an,the,and,but,if,or,because,as,until,while,of,at,by,for,with,about,against,between,into,through,during,before,after,above,below,to,from,up,upon,down,in,out,on,off,over,under,again,further,then,once,here,there,when,where,why,how,all,any,both,each,few,more,most,other,some,such,no,nor,not,only,own,same,so,than,too,very,say,says,said,shall,poop";
-
-            var fill = d3.scaleOrdinal(d3.schemeCategory10);
-            var width = document.body.clientWidth;
-            var height = 400;
+            fill = d3.scaleOrdinal(d3.schemeCategory10);
 
             d3.layout.cloud()
-                .size([width, height])
+                .size([tags_width, tags_height])
                 .words(
-                    Object.keys(tags)
-                    .map(function(tag) {
-                        return {text: tag, size: tags[tag]};
+                    tags.map(function(tag) {
+                        return {text: tag[0], size: tag[1]};
                     }))
-                .padding(5)
+                .padding(2)
                 .font("Impact")
                 .fontSize(function(tag) { 
                     return tag.size; })
@@ -132,11 +131,11 @@
                 .start();
             
             function drawTags(tags) {
-                d3.select(svg_location).append("svg")
-                    .attr("width", width)
-                    .attr("height", height)
+                d3.select("#word_cloud_tags").append("svg")
+                    .attr("width", tags_width)
+                    .attr("height", tags_height)
                     .append("g")
-                        .attr("transform", "translate(" + [width >> 1, height >> 1] + ")")
+                        .attr("transform", "translate(" + [tags_width >> 1, tags_height >> 1] + ")")
                     .selectAll("text")
                     .data(tags)
                     .enter()
@@ -156,8 +155,8 @@
 
         // scale x into a range [a, b]
         function scaleData(a, b, min, max, tags) {
-            for (const [key, x] of Object.entries(tags)) {
-                tags[key] = (b - a) * ((x - min) / (max - min)) + a
+            for (let i=0; i<tags.length; i++) {
+                tags[i][1] = (b - a) * ((tags[i][1] - min) / (max - min)) + a
             }
         }
 
@@ -171,9 +170,17 @@
                     tags[data[i].tag] += 1;
                 }
             }
-            min = Math.min(...Object.values(tags))
-            max = Math.max(...Object.values(tags))
-            scaleData(5, 70, min, max, tags)
+
+            tags = Object.entries(tags)
+
+            tags.sort(
+                (first, second) => { return second[1] - first[1] }
+            )
+
+            tags = tags.slice(0, max_num_tags)
+            max = tags[0][1]
+            min = tags[max_num_tags-1][1]
+            scaleData(20, 70, min, max, tags)
             return tags
         }
 
