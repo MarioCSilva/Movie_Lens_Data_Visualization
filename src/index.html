@@ -27,13 +27,11 @@
 
         // for word cloud of most popular tags
         var max_num_tags = 50;
-        var tags_height = 600;
-        var tags_width = document.body.clientWidth;
 
         // set the dimensions and margins of the graph
         var margin = {top: 10, right: 30, bottom: 30, left: 60},
-            width = 460 - margin.left - margin.right,
-            height = 400 - margin.top - margin.bottom;
+            width = 1200 - margin.left - margin.right,
+            height = 600 - margin.top - margin.bottom;
 
         const scatter_svg = d3.select("#scatter_movies")
             .append("svg")
@@ -48,7 +46,8 @@
                 .attr("height", height + margin.top + margin.bottom)
             .append("g")
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
+        
+        var barWidth = 30
 
         // Preprocess movies
         // Uses global variable movies
@@ -60,77 +59,139 @@
             }
         }
 
-        function drawBoxPlot(movie_popularity) {
-            // Compute quartiles, median, inter quantile range min and max --> these info are then used to draw the box.
-            var sumstat = d3.nest() // nest function allows to group the calculation per level of a factor
-                .key(function(d) { return d.Species;})
-                .rollup(function(d) {
-                q1 = d3.quantile(d.map(function(g) { return g.Sepal_Length;}).sort(d3.ascending),.25)
-                median = d3.quantile(d.map(function(g) { return g.Sepal_Length;}).sort(d3.ascending),.5)
-                q3 = d3.quantile(d.map(function(g) { return g.Sepal_Length;}).sort(d3.ascending),.75)
-                interQuantileRange = q3 - q1
-                min = q1 - 1.5 * interQuantileRange
-                max = q3 + 1.5 * interQuantileRange
-                return({q1: q1, median: median, q3: q3, interQuantileRange: interQuantileRange, min: min, max: max})
-                })
-                .entries(data)
+        function preProcessBoxPlot(movie_popularity) {
+            genre_ratings = {}
+            for (let [movie_id, movie_data] of Object.entries(movie_popularity)) {
+                for (let i=0; i<movies[movie_id].genres.length; i++) {
+                    genre = movies[movie_id].genres[i]
+                    if (genre == '(no genres listed)') {
+                        continue
+                    }
+                    if (!genre_ratings[genre]) {
+                        genre_ratings[genre] = movie_data.ratings.filter(Number)
+                    } else {
+                        genre_ratings[genre].push(...movie_data.ratings.filter(Number))
+                    }
+                }
+            }
+            // Setup a color scale for filling each box
+            var colorScale = d3.scaleOrdinal(d3.schemeCategory10)
+                .domain(Object.keys(genre_ratings));
 
-            // Show the X scale
-            var x = d3.scaleBand()
-                .range([ 0, width ])
-                .domain(["setosa", "versicolor", "virginica"])
-                .paddingInner(1)
-                .paddingOuter(.5)
+            for (var [genre, genre_data] of Object.entries(genre_ratings)) {
+                ratings = genre_data.sort((a, b) => a - b);
+                total = 0
+                for (let i=0; i<ratings.length; i++) {
+                    total += ratings[i]
+                }
+                localMin = d3.min(ratings);
+                localMax = d3.max(ratings);
+
+                obj = {};
+                obj["ratings"] = ratings;
+                obj["avg_rating"] = total / ratings.length;
+                obj["quartile"] = [
+                    d3.quantile(ratings, .25),
+                    Math.round((obj["avg_rating"] + Number.EPSILON) * 100) / 100,
+                    d3.quantile(ratings, .75)
+                ]
+                obj["whiskers"] = [localMin, localMax];
+                obj["color"] = colorScale(genre);
+                genre_ratings[genre] = obj;
+            }
+
+            return genre_ratings
+        }
+
+        function drawBoxPlot(genre_ratings) {
+
+            var xScale = d3.scalePoint()
+                .domain(Object.keys(genre_ratings))
+                .rangeRound([0, width])
+                .padding([0.5]);
+
+            const yScale = d3.scaleLinear()
+                .domain([0, 5])
+                .range([height, 0]);
+
+            var g = box_plot_svg.append("g");
+
+            var verticalLines = g.selectAll(".verticalLines")
+                .data(Object.entries(genre_ratings))
+                .enter()
+                    .append("line")
+                    .attr("x1", function(d) { return xScale(d[0]) })
+                    .attr("y1", function(d) { return yScale(d[1].whiskers[0]); })
+                    .attr("x2", function(d) { return xScale(d[0]); })
+                    .attr("y2", function(d) { return yScale(d[1].whiskers[1]); })
+                    .attr("stroke", "#000")
+                    .attr("stroke-width", 1)
+                    .attr("fill", "none");
+
+            var rects = g.selectAll("rect")
+                .data(Object.entries(genre_ratings))
+                .enter()
+                    .append("rect")
+                    .attr("width", barWidth)
+                    .attr("height", function(d) {
+                        var quartiles = d[1].quartile;
+                        var height =  yScale(quartiles[0]) - yScale(quartiles[2]);      
+                        return height;
+                    })
+                    .attr("x", function(d) { return xScale(d[0]) - (barWidth/2); })
+                    .attr("y", function(d) { return yScale(d[1].quartile[2]); })
+                    .attr("fill", function(d) { return d[1].color; })
+                    .attr("stroke", "#000")
+                    .attr("stroke-width", 1);
+
+            var horizontalLineConfigs = [
+                // Top whisker
+                {
+                    x1: function(d) { return xScale(d[0]) - barWidth/2 },
+                    y1: function(d) { return yScale(d[1].whiskers[0]) },
+                    x2: function(d) { return xScale(d[0]) + barWidth/2 },
+                    y2: function(d) { return yScale(d[1].whiskers[0]) }
+                },
+                // Median line
+                {
+                    x1: function(d) { return xScale(d[0]) - barWidth/2 },
+                    y1: function(d) { return yScale(d[1].quartile[1]) },
+                    x2: function(d) { return xScale(d[0]) + barWidth/2 },
+                    y2: function(d) { return yScale(d[1].quartile[1]) }
+                },
+                // Bottom whisker
+                {
+                    x1: function(d) { return xScale(d[0]) - barWidth/2 },
+                    y1: function(d) { return yScale(d[1].whiskers[1]) },
+                    x2: function(d) { return xScale(d[0]) + barWidth/2 },
+                    y2: function(d) { return yScale(d[1].whiskers[1]) }
+                }
+            ];
+
+            for(var i=0; i < horizontalLineConfigs.length; i++) {
+                var lineConfig = horizontalLineConfigs[i];
+
+                var horizontalLine = g.selectAll(".whiskers")
+                    .data(Object.entries(genre_ratings))
+                    .enter()
+                        .append("line")
+                        .attr("x1", lineConfig.x1)
+                        .attr("y1", lineConfig.y1)
+                        .attr("x2", lineConfig.x2)
+                        .attr("y2", lineConfig.y2)
+                        .attr("stroke", "#000")
+                        .attr("stroke-width", 1)
+                        .attr("fill", "none");
+            }
+
             box_plot_svg.append("g")
                 .attr("transform", "translate(0," + height + ")")
-                .call(d3.axisBottom(x))
+                .call(d3.axisBottom(xScale));
 
-            // Show the Y scale
-            var y = d3.scaleLinear()
-                .domain([3,9])
-                .range([height, 0])
-            box_plot_svg.append("g").call(d3.axisLeft(y))
-
-            // Show the main vertical line
-            box_plot_svg
-                .selectAll("vertLines")
-                .data(sumstat)
-                .enter()
-                .append("line")
-                .attr("x1", function(d){return(x(d.key))})
-                .attr("x2", function(d){return(x(d.key))})
-                .attr("y1", function(d){return(y(d.value.min))})
-                .attr("y2", function(d){return(y(d.value.max))})
-                .attr("stroke", "black")
-                .style("width", 40)
-
-            // rectangle for the main box
-            var boxWidth = 100
-            box_plot_svg
-                .selectAll("boxes")
-                .data(sumstat)
-                .enter()
-                .append("rect")
-                    .attr("x", function(d){return(x(d.key)-boxWidth/2)})
-                    .attr("y", function(d){return(y(d.value.q3))})
-                    .attr("height", function(d){return(y(d.value.q1)-y(d.value.q3))})
-                    .attr("width", boxWidth )
-                    .attr("stroke", "black")
-                    .style("fill", "#69b3a2")
-
-            // Show the median
-            box_plot_svg
-                .selectAll("medianLines")
-                .data(sumstat)
-                .enter()
-                .append("line")
-                .attr("x1", function(d){return(x(d.key)-boxWidth/2) })
-                .attr("x2", function(d){return(x(d.key)+boxWidth/2) })
-                .attr("y1", function(d){return(y(d.value.median))})
-                .attr("y2", function(d){return(y(d.value.median))})
-                .attr("stroke", "black")
-                .style("width", 80)
+            box_plot_svg.append("g")
+                .call(d3.axisLeft(yScale));
         }
+
 
         function drawScatterPlot(movie_popularity) {
             // Add X axis
@@ -145,9 +206,9 @@
             const y = d3.scaleLinear()
                 .domain([0, 5])
                 .range([height, 0]);
+
             scatter_svg.append("g")
                 .call(d3.axisLeft(y));
-
             
             // Add dots
             scatter_svg.append('g')
@@ -197,7 +258,7 @@
             fill = d3.scaleOrdinal(d3.schemeCategory10);
 
             d3.layout.cloud()
-                .size([tags_width, tags_height])
+                .size([width, height])
                 .words(
                     tags.map(function(tag) {
                         return {text: tag[0], size: tag[1]};
@@ -211,10 +272,10 @@
             
             function drawTags(tags) {
                 d3.select("#word_cloud_tags").append("svg")
-                    .attr("width", tags_width)
-                    .attr("height", tags_height)
+                    .attr("width", width)
+                    .attr("height", height)
                     .append("g")
-                        .attr("transform", "translate(" + [tags_width >> 1, tags_height >> 1] + ")")
+                        .attr("transform", "translate(" + [width >> 1, height >> 1] + ")")
                     .selectAll("text")
                     .data(tags)
                     .enter()
@@ -268,9 +329,9 @@
             d3.csv("../dataset/ratings.csv")
                 .then((data) => {
                     movie_popularity = preProcessRatings(data)
-                    movies_pop_arr = Object.values(movie_popularity)
-                    drawBoxPlot(movie_popularity)
-                    drawScatterPlot(movies_pop_arr)
+                    genre_ratings = preProcessBoxPlot(movie_popularity)
+                    drawBoxPlot(genre_ratings)
+                    drawScatterPlot(Object.values(movie_popularity))
                 }).catch(err => { console.log(err) });
 
             d3.csv("../dataset/tags.csv")
