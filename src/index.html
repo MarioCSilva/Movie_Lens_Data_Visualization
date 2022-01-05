@@ -8,17 +8,17 @@
 
     <!-- for word cloud -->
     <script src="./js/cloud.js"></script>
-    
+
 
     <title>MovieLens Data Visualization</title>
 </head>
 
 <body>
     <div id="barchart_genres"></div>
+    <div id ="lineplot_genres"></div>
     <div id="box_plot_popularity"></div>
     <div id="scatter_movies"></div>
     <div id="word_cloud_tags"></div>
-
 
     <script>
         let movies = {};
@@ -41,12 +41,21 @@
 
 
         // append the svg object to the body of the page
-        var barchart_svg = d3.select("#barchart_genres")
+        const barchart_svg = d3.select("#barchart_genres")
             .append("svg")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
             .append("g")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+
+        // append the svg object to the body of the page
+        const lineplot_svg = d3.select("#lineplot_genres")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform",
+                "translate(" + margin.left + "," + margin.top + ")");
 
         const scatter_svg = d3.select("#scatter_movies")
             .append("svg")
@@ -173,19 +182,37 @@
                 .style("fill", "#69b3a2")
         }
 
+
+        function parseTimestamp(timestamp) {
+            timestamp = parseInt(timestamp);
+            var u = new Date(timestamp * 1000);
+            return u.getUTCFullYear() +
+                '-' + ('0' + u.getUTCMonth()).slice(-2) +
+                '-' + ('0' + u.getUTCDate()).slice(-2)
+        }
+
+
+
         // dataset: userId,movieId,rating,timestamp
         function preProcessRatings(data) {
             ratings = [];
-
             for (let i = 0; i < data.length; i++) {
                 movie_id = data[i].movieId
                 ratings.push(data[i]);
+                date = parseTimestamp(data[i].timestamp);
+                if (date == 'date'){
+                    console.log("aaa")
+                }
                 if (!movie_popularity[movie_id]) {
+
                     movie_popularity[movie_id] = {
                         'avg': parseInt(data[i].rating),
                         'num_reviews': 1,
-                        'ratings': [parseInt(data[i].rating)]
+                        'ratings': [parseInt(data[i].rating)],
+                        'dates': {}
                     }
+                    movie_popularity[movie_id].dates[date]= [data[i].rating]; 
+
                 }
                 else {
                     movie_popularity[movie_id].num_reviews = movie_popularity[movie_id].num_reviews + 1
@@ -193,9 +220,17 @@
                     if (movie_popularity[movie_id].num_reviews > max_num_reviews) {
                         max_num_reviews = movie_popularity[movie_id].num_reviews
                     }
-                }
-            }
 
+                    if (!movie_popularity[movie_id].dates[date]) {
+                        movie_popularity[movie_id].dates[date] = [data[i].rating];
+                    }
+                    else {
+                        movie_popularity[movie_id].dates[date].push(data[i].rating);
+                    }
+
+                }
+
+            }
             for (let movie in movie_popularity) {
                 ratings = movie_popularity[movie].ratings
                 sum = ratings.reduce((a, b) => a + b, 0)
@@ -231,6 +266,24 @@
             return genres_review_counter;
         }
 
+
+        function preProcessGenreReviewsThroughTime(movie_popularity) {
+            genres_reviews_time = [];
+            for (let movie in movie_popularity) {
+                genres = movies[movie].genres;
+                ratings = movie_popularity[movie].ratings.length
+                dates = movie_popularity[movie].dates;
+                for (let i = 0; i < genres.length; i++) {
+                    genre = genres[i];
+                    for (let date in dates) {
+                        all_reviews = dates[date].length;
+                        obj = { 'genre': genre, 'timestamp': date, 'num_reviews': all_reviews };
+                        genres_reviews_time.push(obj);
+                    }
+                }
+            }
+            return genres_reviews_time;
+        }
 
 
         function drawBarChart(data) {
@@ -315,6 +368,61 @@
             d3.layout.cloud().stop();
         }
 
+
+        function drawLinePlot(data) {
+            
+
+
+            // group the data: I want to draw one line per group
+            let sumstat = d3.group(data, d => d.genre)
+            
+
+
+            data.forEach(function(d){
+                d.timestamp = d3.timeParse("%Y-%m-%d")(d.timestamp);
+            });
+            // Add X axis --> it is a date format
+            let x = d3.scaleTime()
+                .domain(d3.extent(data, function (d) { return d.timestamp; }))
+                .range([0, width]);
+            lineplot_svg.append("g")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(x).ticks(5));
+
+            // Add Y axis
+            let y = d3.scaleLinear()
+                .domain([0, d3.max(data, function (d) { return +d.num_reviews; })])
+                .range([height, 0]);
+            lineplot_svg.append("g")
+                .call(d3.axisLeft(y));
+
+            console.log(sumstat);
+            // color palette
+            let res = Array.from(sumstat.keys()); // list of group names
+            let color = d3.scaleOrdinal()
+                .domain(res)
+                .range(['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628', '#f781bf',
+                 '#999999', '#14d0df', '#81628d', '#04cece','#039999', '#039999', '#23855d', '#23855d', '#b5e655', '#f5803c', '#fbcfb6' ])
+
+            // Draw the line
+            lineplot_svg.selectAll(".line")
+                .data(sumstat)
+                .enter()
+                .append("path")
+                .attr("fill", "none")
+                .attr("stroke", function (d) { return color(d.genre) })
+                .attr("stroke-width", 1.5)
+                .attr("d", function (d) {
+                    return d3.line()
+                        .x(function (d) { return x(d.timestamp); })
+                        .y(function (d) { return y(+d.num_reviews); })
+                        (d.values)
+                })
+
+
+        }
+
+
         // scale x into a range [a, b]
         function scaleData(a, b, min, max, tags) {
             for (let i = 0; i < tags.length; i++) {
@@ -325,7 +433,7 @@
         // dataset: userId,movieId,tag,timestamp
         function preProcessTags(data) {
             tags = {}
-            for (var i = 0; i < data.length; i++) {
+            for (let i = 0; i < data.length; i++) {
                 if (!tags[data[i].tag]) {
                     tags[data[i].tag] = 1;
                 } else {
@@ -352,11 +460,12 @@
                 .then((data) => {
                     movie_popularity = preProcessRatings(data)
                     movies_pop_arr = Object.values(movie_popularity)
-
                     genres_reviews = preProcessGenresReviews(movie_popularity);
-                    drawBoxPlot(movie_popularity)
+                    genres_through_time = preProcessGenreReviewsThroughTime(movie_popularity);
+                    //drawBoxPlot(movie_popularity)
                     drawBarChart(genres_reviews)
                     drawScatterPlot(movies_pop_arr)
+                    drawLinePlot(genres_through_time)
                 }).catch(err => { console.log(err) });
 
             d3.csv("../dataset/tags.csv")
@@ -364,6 +473,13 @@
                     tags = preProcessTags(data);
                     drawWordCloud(tags);
                 }).catch(err => { console.log(err) });
+
+
+
+            //d3.csv("https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/5_OneCatSevNumOrdered.csv", function(data) {
+            //    console.log(data)
+            //});
+
         }
 
         // initial load of data that only will be executed once
