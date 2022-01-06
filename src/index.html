@@ -5,215 +5,229 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script type="text/javascript" src="http://d3js.org/d3.v6.js"></script>
-
-    <!-- for word cloud -->
+    <script src="https://code.jquery.com/jquery-3.6.0.slim.js"
+        integrity="sha256-HwWONEZrpuoh951cQD1ov2HUK5zA5DwJ1DNUXaM6FsY=" crossorigin="anonymous"></script>
+    <link href="css/select2.min.css" rel="stylesheet" />
+    <script src="js/select2.min.js"></script>
     <script src="./js/cloud.js"></script>
-
-
+    <link rel="stylesheet" href="css/rSlider.min.css">
+    <script src="js/rSlider.min.js"></script>
+    <link rel="stylesheet" href="css/mystyle.css">
+    <link rel="stylesheet" href="css/legend.css">
     <title>MovieLens Data Visualization</title>
 </head>
 
 <body>
-    <div id="barchart_genres"></div>
-    <div id ="lineplot_genres"></div>
-    <div id="box_plot_popularity"></div>
-    <div id="scatter_movies"></div>
-    <div id="word_cloud_tags"></div>
+
+    <div class="sidenav">
+        <h1>FILTERS</h1>
+        <h3>Time Interval</h3>
+        <input type="text" id="slider" class="slider">
+        <hr style="margin: 50px 0px 50px 0px; color: white">
+
+        <div class="wrapper">
+            <input type="radio" name="select" id="option-1" checked onclick="selectChange()">
+            <input type="radio" name="select" id="option-2" onclick="selectChange()">
+            <label for="option-1" class="option option-1">
+                <div class="dot"></div>
+                <span>Genres</span>
+            </label>
+            <label for="option-2" class="option option-2">
+                <div class="dot"></div>
+                <span>Movies</span>
+            </label>
+        </div>
+        <div id="genreselect" style="display: block;">
+            <select class="genre-select" style="width: 324" multiple="multiple"></select>
+        </div>
+        <div id="movieselect" style="display: none;">
+            <select class="movie-select" id="movieselect" style="width: 324" multiple="multiple"></select>
+        </div>
+        <div class="box-1">
+            <div id="applyfilter" onclick="applyFilters()" class="btn btn-one">
+                <span>APPLY FILTERS</span>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div class="main">
+        <div class="legendmain"></div>
+        <div id="barchart_genres"></div>
+        <div id="lineplot_genres"></div>
+        <div id="box_plot_popularity"></div>
+        <div id="scatter_movies"></div>
+        <div id="word_cloud_tags"></div>
+    </div>
 
     <script>
-        let movies = {};
-
-        let movie_popularity = {};
-
-        let genres_review_counter = {};
-
-        var max_num_reviews = 0;
-
-        // for word cloud of most popular tags
-        var max_num_tags = 50;
+        var movie_popularity, genres_review_counter, max_num_reviews, max_item_num_reviews,
+            max_num_tags, min_time, max_time, max_reviews,
+            barchart_svg, lineplot_svg, scatter_svg, box_plot_svg;
 
         // set the dimensions and margins of the graph
-        var margin = {top: 10, right: 30, bottom: 30, left: 60},
+        var margin = { top: 10, right: 30, bottom: 30, left: 60 },
             width = 1200 - margin.left - margin.right,
             height = 600 - margin.top - margin.bottom;
-
-
-        // append the svg object to the body of the page
-        const barchart_svg = d3.select("#barchart_genres")
-            .append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-            .append("g")
-            .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
-
-        // append the svg object to the body of the page
-        const lineplot_svg = d3.select("#lineplot_genres")
-            .append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-            .append("g")
-            .attr("transform",
-                "translate(" + margin.left + "," + margin.top + ")");
-
-        const scatter_svg = d3.select("#scatter_movies")
-            .append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-            .append("g")
-            .attr("transform", `translate(${margin.left}, ${margin.top})`);
-
-        const box_plot_svg = d3.select("#box_plot_popularity")
-            .append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-            .append("g")
-                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
         
-        var barWidth = 30
+        
+        function initGlobalVariables() {
+            movie_popularity = {};
+            genres_review_counter = {};
+            max_num_reviews = 0;
+            max_item_num_reviews = 0;
+            max_num_tags = 50;
+            min_time = new Date();
+            max_time = new Date('1750');
+            max_reviews = 0;
+           
+           d3.select("#barchart_genres").select("svg").remove()
+           d3.select("#lineplot_genres").select("svg").remove()
+           d3.select("#scatter_movies").select("svg").remove()
+           d3.select("#box_plot_popularity").select("svg").remove()
+           d3.select("#word_cloud_tags").select("svg").remove()
+        }
+
+        function selectChange() {
+            if (document.getElementById('genreselect').style.display == 'block') {
+                document.getElementById('genreselect').style.display = 'none';
+                document.getElementById('movieselect').style.display = 'block';
+            } else {
+                document.getElementById('genreselect').style.display = 'block';
+                document.getElementById('movieselect').style.display = 'none';
+            }
+        }
+
+        var mySlider = new rSlider({
+            target: '#slider',
+            values: [1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018],
+            set: [1996, 2018],
+            labels: false,
+            range: true // range slider
+        });
+
+        let movies = {};
+        let all_genres = new Set();
+        let colorScale = undefined;
+
+        let selected_movies = new Set();
+        let selected_genres = new Set();
+
+        let barWidth = 30
+
+        initGlobalVariables()
 
         // Preprocess movies
-        // Uses global variable movies
+        // Uses global variable movies and all_genres
         // dataset: movieId,title,genres
         function preProcessMovies(data) {
             for (let i = 0; i < data.length; i++) {
                 genres = data[i].genres.split('|')
                 movies[data[i].movieId] = { 'title': data[i].title, 'genres': genres }
+                genres.forEach(genre => all_genres.add(genre))
             }
+            colorScale = d3.scaleOrdinal(
+                ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
+                    '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D',
+                    '#E6B3B3', '#6680B3', '#66991A', '#FF99E6', '#CCFF1A',
+                    '#FF1A66', '#E6331A', '#33FFCC', '#B366CC', '#4D8000',
+                    '#B33300', '#CC80CC', '#66664D', '#991AFF', '#E666FF',
+                    '#E666B3', '#33991A', '#CC9999', '#B3B31A', '#00E680',
+                    '#4D8066', '#809980', '#E6FF80', '#1AFF33', '#999933',
+                    '#FF3380', '#CCCC00', '#66E64D', '#4D80CC', '#9900B3',
+                    '#E64D66', '#4DB380', '#FF4D4D', '#99E6E6', '#6666FF',
+                    '#4DB3FF', '#1AB399'])
+                .domain(all_genres);
         }
 
-        function preProcessBoxPlot(movie_popularity) {
-            genre_ratings = {}
-            for (let [movie_id, movie_data] of Object.entries(movie_popularity)) {
-                for (let i=0; i<movies[movie_id].genres.length; i++) {
-                    genre = movies[movie_id].genres[i]
-                    if (genre == '(no genres listed)') {
-                        continue
-                    }
-                    if (!genre_ratings[genre]) {
-                        genre_ratings[genre] = movie_data.ratings.filter(Number)
-                    } else {
-                        genre_ratings[genre].push(...movie_data.ratings.filter(Number))
-                    }
-                }
-            }
-            // Setup a color scale for each genre
-            var colorScale = d3.scaleOrdinal(
-                ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6', 
-                '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D',
-                '#E6B3B3', '#6680B3', '#66991A', '#FF99E6', '#CCFF1A',
-                '#FF1A66', '#E6331A', '#33FFCC', '#B366CC', '#4D8000',
-                '#B33300', '#CC80CC', '#66664D', '#991AFF', '#E666FF',
-                '#E666B3', '#33991A', '#CC9999', '#B3B31A', '#00E680', 
-                '#4D8066', '#809980', '#E6FF80', '#1AFF33', '#999933',
-                '#FF3380', '#CCCC00', '#66E64D', '#4D80CC', '#9900B3', 
-                '#E64D66', '#4DB380', '#FF4D4D', '#99E6E6', '#6666FF',
-                '#4DB3FF', '#1AB399'])
-                .domain(Object.keys(genre_ratings));
-                
-            for (var [genre, genre_data] of Object.entries(genre_ratings)) {
-                ratings = genre_data.sort((a, b) => a - b);
-                total = 0
-                for (let i=0; i<ratings.length; i++) {
-                    total += ratings[i]
-                }
-                localMin = d3.min(ratings);
-                localMax = d3.max(ratings);
 
-                obj = {};
-                obj["ratings"] = ratings;
-                obj["avg_rating"] = total / ratings.length;
-                obj["quartile"] = [
-                    d3.quantile(ratings, .25),
-                    Math.round((obj["avg_rating"] + Number.EPSILON) * 100) / 100,
-                    d3.quantile(ratings, .75)
-                ]
-                obj["whiskers"] = [localMin, localMax];
-                obj["color"] = colorScale(genre);
-                genre_ratings[genre] = obj;
-            }
-
-            return genre_ratings
-        }
-
-        function drawBoxPlot(genre_ratings) {
+        function drawBoxPlot(items_ratings) {
 
             var xScale = d3.scalePoint()
-                .domain(Object.keys(genre_ratings))
+                .domain(Object.keys(items_ratings))
                 .rangeRound([0, width])
                 .padding([0.5]);
 
             const yScale = d3.scaleLinear()
                 .domain([0, 5])
                 .range([height, 0]);
+            
+            box_plot_svg = d3.select("#box_plot_popularity")
+               .append("svg")
+               .attr("width", width + margin.left + margin.right)
+               .attr("height", height + margin.top + margin.bottom)
+               .append("g")
+               .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
             var g = box_plot_svg.append("g");
 
             var verticalLines = g.selectAll(".verticalLines")
-                .data(Object.entries(genre_ratings))
+                .data(Object.entries(items_ratings))
                 .enter()
-                    .append("line")
-                    .attr("x1", function(d) { return xScale(d[0]) })
-                    .attr("y1", function(d) { return yScale(d[1].whiskers[0]); })
-                    .attr("x2", function(d) { return xScale(d[0]); })
-                    .attr("y2", function(d) { return yScale(d[1].whiskers[1]); })
-                    .attr("stroke", "#000")
-                    .attr("stroke-width", 1)
-                    .attr("fill", "none");
+                .append("line")
+                .attr("x1", function (d) { return xScale(d[0]) })
+                .attr("y1", function (d) { return yScale(d[1].whiskers[0]); })
+                .attr("x2", function (d) { return xScale(d[0]); })
+                .attr("y2", function (d) { return yScale(d[1].whiskers[1]); })
+                .attr("stroke", "#000")
+                .attr("stroke-width", 1)
+                .attr("fill", "none");
 
             var rects = g.selectAll("rect")
-                .data(Object.entries(genre_ratings))
+                .data(Object.entries(items_ratings))
                 .enter()
-                    .append("rect")
-                    .attr("width", barWidth)
-                    .attr("height", function(d) {
-                        var quartiles = d[1].quartile;
-                        var height =  yScale(quartiles[0]) - yScale(quartiles[2]);      
-                        return height;
-                    })
-                    .attr("x", function(d) { return xScale(d[0]) - (barWidth/2); })
-                    .attr("y", function(d) { return yScale(d[1].quartile[2]); })
-                    .attr("fill", function(d) { return d[1].color; })
-                    .attr("stroke", "#000")
-                    .attr("stroke-width", 1);
+                .append("rect")
+                .attr("width", barWidth)
+                .attr("height", function (d) {
+                    var quartiles = d[1].quartile;
+                    var height = yScale(quartiles[0]) - yScale(quartiles[2]);
+                    return height;
+                })
+                .attr("x", function (d) { return xScale(d[0]) - (barWidth / 2); })
+                .attr("y", function (d) { return yScale(d[1].quartile[2]); })
+                .attr("fill", function (d) { return d[1].color; })
+                .attr("stroke", "#000")
+                .attr("stroke-width", 1);
 
             var horizontalLineConfigs = [
                 // Top whisker
                 {
-                    x1: function(d) { return xScale(d[0]) - barWidth/2 },
-                    y1: function(d) { return yScale(d[1].whiskers[0]) },
-                    x2: function(d) { return xScale(d[0]) + barWidth/2 },
-                    y2: function(d) { return yScale(d[1].whiskers[0]) }
+                    x1: function (d) { return xScale(d[0]) - barWidth / 2 },
+                    y1: function (d) { return yScale(d[1].whiskers[0]) },
+                    x2: function (d) { return xScale(d[0]) + barWidth / 2 },
+                    y2: function (d) { return yScale(d[1].whiskers[0]) }
                 },
                 // Median line
                 {
-                    x1: function(d) { return xScale(d[0]) - barWidth/2 },
-                    y1: function(d) { return yScale(d[1].quartile[1]) },
-                    x2: function(d) { return xScale(d[0]) + barWidth/2 },
-                    y2: function(d) { return yScale(d[1].quartile[1]) }
+                    x1: function (d) { return xScale(d[0]) - barWidth / 2 },
+                    y1: function (d) { return yScale(d[1].quartile[1]) },
+                    x2: function (d) { return xScale(d[0]) + barWidth / 2 },
+                    y2: function (d) { return yScale(d[1].quartile[1]) }
                 },
                 // Bottom whisker
                 {
-                    x1: function(d) { return xScale(d[0]) - barWidth/2 },
-                    y1: function(d) { return yScale(d[1].whiskers[1]) },
-                    x2: function(d) { return xScale(d[0]) + barWidth/2 },
-                    y2: function(d) { return yScale(d[1].whiskers[1]) }
+                    x1: function (d) { return xScale(d[0]) - barWidth / 2 },
+                    y1: function (d) { return yScale(d[1].whiskers[1]) },
+                    x2: function (d) { return xScale(d[0]) + barWidth / 2 },
+                    y2: function (d) { return yScale(d[1].whiskers[1]) }
                 }
             ];
 
-            for(var i=0; i < horizontalLineConfigs.length; i++) {
+            for (var i = 0; i < horizontalLineConfigs.length; i++) {
                 var lineConfig = horizontalLineConfigs[i];
 
                 var horizontalLine = g.selectAll(".whiskers")
-                    .data(Object.entries(genre_ratings))
+                    .data(Object.entries(items_ratings))
                     .enter()
-                        .append("line")
-                        .attr("x1", lineConfig.x1)
-                        .attr("y1", lineConfig.y1)
-                        .attr("x2", lineConfig.x2)
-                        .attr("y2", lineConfig.y2)
-                        .attr("stroke", "#000")
-                        .attr("stroke-width", 1)
-                        .attr("fill", "none");
+                    .append("line")
+                    .attr("x1", lineConfig.x1)
+                    .attr("y1", lineConfig.y1)
+                    .attr("x2", lineConfig.x2)
+                    .attr("y2", lineConfig.y2)
+                    .attr("stroke", "#000")
+                    .attr("stroke-width", 1)
+                    .attr("fill", "none");
             }
 
             box_plot_svg.append("g")
@@ -230,6 +244,13 @@
             const x = d3.scaleLinear()
                 .domain([0, max_num_reviews])
                 .range([0, width]);
+            
+            scatter_svg = d3.select("#scatter_movies")
+               .append("svg")
+               .attr("width", width + margin.left + margin.right)
+               .attr("height", height + margin.top + margin.bottom)
+               .append("g")
+               .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
             scatter_svg.append("g")
                 .attr("transform", `translate(0, ${height})`)
@@ -241,11 +262,11 @@
 
             scatter_svg.append("g")
                 .call(d3.axisLeft(y));
-            
+
             // Add dots
             scatter_svg.append('g')
                 .selectAll("dot")
-                .data(movie_popularity.entries())
+                .data(Object.values(movie_popularity).entries())
                 .join("circle")
                 .attr("cx", function (d) { return x(d[1].num_reviews); })
                 .attr("cy", function (d) { return y(d[1].avg); })
@@ -256,42 +277,40 @@
 
         function parseTimestamp(timestamp) {
             timestamp = parseInt(timestamp);
-            var u = new Date(timestamp * 1000);
-            return u.getUTCFullYear() +
-                '-' + ('0' + u.getUTCMonth()).slice(-2) +
-                '-' + ('0' + u.getUTCDate()).slice(-2)
+            let u = new Date(timestamp * 1000);
+            let temp = parseInt(u.getMonth() + 1);
+            if (temp < 10) {
+                temp = '0' + temp;
+            }
+            return u.getFullYear() +
+                '-' + (temp)
         }
 
 
 
         // dataset: userId,movieId,rating,timestamp
         function preProcessRatings(data) {
-            ratings = [];
             for (let i = 0; i < data.length; i++) {
                 movie_id = data[i].movieId
-                ratings.push(data[i]);
-                date = parseTimestamp(data[i].timestamp);
-                if (date == 'date'){
-                    console.log("aaa")
+                if (document.getElementById('movieselect').style.display == 'block' && !selected_movies.has(movie_id) ||
+                    document.getElementById('genreselect').style.display == 'block' && !movies[movie_id].genres.some(g => selected_genres.has(g))) {
+                    continue
                 }
+                date = parseTimestamp(data[i].timestamp);
                 if (!movie_popularity[movie_id]) {
-
                     movie_popularity[movie_id] = {
                         'avg': parseInt(data[i].rating),
                         'num_reviews': 1,
                         'ratings': [parseInt(data[i].rating)],
                         'dates': {}
                     }
-                    movie_popularity[movie_id].dates[date]= [data[i].rating]; 
-
-                }
-                else {
+                    movie_popularity[movie_id].dates[date] = [data[i].rating];
+                } else {
                     movie_popularity[movie_id].num_reviews = movie_popularity[movie_id].num_reviews + 1
                     movie_popularity[movie_id].ratings.push(parseInt(data[i].rating))
                     if (movie_popularity[movie_id].num_reviews > max_num_reviews) {
                         max_num_reviews = movie_popularity[movie_id].num_reviews
                     }
-
                     if (!movie_popularity[movie_id].dates[date]) {
                         movie_popularity[movie_id].dates[date] = [data[i].rating];
                     }
@@ -311,55 +330,106 @@
             return movie_popularity
         }
 
-        function preProcessGenresReviews(movie_popularity) {
-            //TODO: maybe pass this to previous function to avoid another for loop?
-            genres_arr = [];
-            for (let movie in movie_popularity) {
-                genres = movies[movie].genres;
-                ratings = movie_popularity[movie].ratings.length
-                for (let i = 0; i < genres.length; i++) {
-                    genre = genres[i];
-                    if (!genres_review_counter[genre]) {
-                        genres_review_counter[genre] = ratings;
-                        genres_arr.push(genre)
-                    }
-                    else {
-                        genres_review_counter[genre] += ratings;
+        function preProcessItemsPopularity(movie_popularity) {
+            let parseTime = d3.timeParse("%Y-%m");
+
+            items_ratings = {}
+            if (document.getElementById('genreselect').style.display == 'block') {
+                for (let [movie_id, movie_data] of Object.entries(movie_popularity)) {
+                    for (let i = 0; i < movies[movie_id].genres.length; i++) {
+                        genre = movies[movie_id].genres[i]
+                        if (!selected_genres.has(genre)) {
+                            continue
+                        }
+                        if (!items_ratings[genre]) {
+                            items_ratings[genre] = { 'ratings': movie_data.ratings.filter(Number), 'reviewstime': {} }
+                        } else {
+                            items_ratings[genre].ratings.push(...movie_data.ratings.filter(Number))
+                        }
+                        dates = movie_data.dates;
+                        for (let date in dates) {
+                            all_reviews = dates[date].length;
+                            date = parseTime(date);
+                            if (max_time < date) {
+                                max_time = date;
+                            }
+                            if (min_time > date) {
+                                min_time = date;
+                            }
+                            if (!items_ratings[genre].reviewstime[date]) {
+                                items_ratings[genre].reviewstime[date] = all_reviews;
+                            }
+                            else {
+                                items_ratings[genre].reviewstime[date] += all_reviews
+                            }
+                            if (max_reviews < items_ratings[genre].reviewstime[date]) {
+                                max_reviews = items_ratings[genre].reviewstime[date];
+                            }
+                        }
                     }
                 }
-            }
-            const index = genres_arr.indexOf('(no genres listed)');
-            if (index > -1) {
-                genres_arr.splice(index, 1);
-                delete genres_review_counter['(no genres listed)'];
-            }
-            return genres_review_counter;
-        }
-
-
-        function preProcessGenreReviewsThroughTime(movie_popularity) {
-            genres_reviews_time = [];
-            for (let movie in movie_popularity) {
-                genres = movies[movie].genres;
-                ratings = movie_popularity[movie].ratings.length
-                dates = movie_popularity[movie].dates;
-                for (let i = 0; i < genres.length; i++) {
-                    genre = genres[i];
+            } else {
+                for (let movie_id of selected_movies) {
+                    item = movies[movie_id].title
+                    dates = movie_popularity[movie_id].dates;
+                    items_ratings[item] = { 'ratings': movie_popularity[movie_id].ratings.filter(Number), 'reviewstime': {} }
                     for (let date in dates) {
                         all_reviews = dates[date].length;
-                        obj = { 'genre': genre, 'timestamp': date, 'num_reviews': all_reviews };
-                        genres_reviews_time.push(obj);
+                        date = parseTime(date);
+                        if (max_time < date) {
+                            max_time = date;
+                        }
+                        if (min_time > date) {
+                            min_time = date;
+                        }
+                        if (!items_ratings[item].reviewstime[date]) {
+                            items_ratings[item].reviewstime[date] = all_reviews;
+                        }
+                        else {
+                            items_ratings[item].reviewstime[date] += all_reviews
+                        }
+                        if (max_reviews < items_ratings[item].reviewstime[date]) {
+                            max_reviews = items_ratings[item].reviewstime[date];
+                        }
                     }
                 }
             }
-            return genres_reviews_time;
+            
+            for (var [item, item_data] of Object.entries(items_ratings)) {
+                ratings = item_data.ratings.sort((a, b) => a - b);
+                total = 0
+                rev_time = Object.entries(item_data.reviewstime)
+                rev_time = rev_time.sort((a, b) => new Date(a[0]) - new Date(b[0]));
+                num_ratings = ratings.length
+                if (num_ratings > max_item_num_reviews) {
+                    max_item_num_reviews = num_ratings;
+                }
+                for (let i = 0; i < num_ratings; i++) {
+                    total += ratings[i]
+                }
+                localMin = d3.min(ratings);
+                localMax = d3.max(ratings);
+                obj = {};
+                obj["ratings"] = ratings;
+                obj["num_ratings"] = num_ratings
+                obj["avg_rating"] = total / num_ratings;
+                obj["quartile"] = [
+                    d3.quantile(ratings, .25),
+                    Math.round((obj["avg_rating"] + Number.EPSILON) * 100) / 100,
+                    d3.quantile(ratings, .75)
+                ]
+                obj["whiskers"] = [localMin, localMax];
+                obj["color"] = colorScale(item);
+                obj["reviewstime"] = {};
+                obj["reviewstime"] = rev_time
+                items_ratings[item] = obj;
+            }
+
+            return items_ratings
         }
 
 
         function drawBarChart(data) {
-            const values = Object.values(data);
-            max_num = Math.max(...values);
-
             data = Object.entries(data);
 
             // X axis
@@ -367,6 +437,13 @@
                 .range([0, width])
                 .domain(data.map(function (d) { return d[0]; }))
                 .padding(0.2);
+
+            barchart_svg = d3.select("#barchart_genres")
+               .append("svg")
+               .attr("width", width + margin.left + margin.right)
+               .attr("height", height + margin.top + margin.bottom)
+               .append("g")
+               .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
             barchart_svg.append("g")
                 .attr("transform", "translate(0," + height + ")")
@@ -377,12 +454,11 @@
 
             // Add Y axis
             var y = d3.scaleLinear()
-                .domain([0, max_num])
+                .domain([0, max_item_num_reviews])
                 .range([height, 0]);
 
             barchart_svg.append("g")
                 .call(d3.axisLeft(y));
-
 
             barchart_svg.selectAll("mybar")
                 .data(data)
@@ -390,11 +466,10 @@
                 .append("rect")
                 .attr("class", "bar")
                 .attr("x", function (d) { return x(d[0]); })
-                .attr("y", function (d) { return y(d[1]); })
+                .attr("y", function (d) { return y(d[1].num_ratings); })
                 .attr("width", x.bandwidth())
-                .attr("height", function (d) { return height - y(d[1]); })
-                .attr("fill", "#69b3a2");
-
+                .attr("height", function (d) { return height - y(d[1].num_ratings); })
+                .attr("fill", function (d) { return d[1].color });
         }
 
 
@@ -416,23 +491,24 @@
                 .start();
 
             function drawTags(tags) {
-                d3.select("#word_cloud_tags").append("svg")
+                d3.select("#word_cloud_tags")
+                    .append("svg")
                     .attr("width", width)
                     .attr("height", height)
                     .append("g")
-                        .attr("transform", "translate(" + [width >> 1, height >> 1] + ")")
-                        .selectAll("text")
-                        .data(tags)
-                        .enter()
-                        .append("text")
-                            .style("font-size", function (d) { return d.size + "px"; })
-                            .style("font-family", "Impact")
-                            .attr("text-anchor", "middle")
-                            .style("fill", function (d, i) { return fill(i); })
-                            .attr("transform", function (d) {
-                                return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
-                            })
-                            .text(function (d) { return d.text; });
+                    .attr("transform", "translate(" + [width >> 1, height >> 1] + ")")
+                    .selectAll("text")
+                    .data(tags)
+                    .enter()
+                    .append("text")
+                    .style("font-size", function (d) { return d.size + "px"; })
+                    .style("font-family", "Impact")
+                    .attr("text-anchor", "middle")
+                    .style("fill", function (d, i) { return fill(i); })
+                    .attr("transform", function (d) {
+                        return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+                    })
+                    .text(function (d) { return d.text; });
             }
 
             d3.layout.cloud().stop();
@@ -440,53 +516,42 @@
 
 
         function drawLinePlot(data) {
-            
-
-
-            // group the data: I want to draw one line per group
-            let sumstat = d3.group(data, d => d.genre)
-            
-
-
-            data.forEach(function(d){
-                d.timestamp = d3.timeParse("%Y-%m-%d")(d.timestamp);
-            });
-            // Add X axis --> it is a date format
             let x = d3.scaleTime()
-                .domain(d3.extent(data, function (d) { return d.timestamp; }))
+                .domain([min_time, max_time])
                 .range([0, width]);
+
+            lineplot_svg = d3.select("#lineplot_genres")
+               .append("svg")
+               .attr("width", width + margin.left + margin.right)
+               .attr("height", height + margin.top + margin.bottom)
+               .append("g")
+               .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+
             lineplot_svg.append("g")
                 .attr("transform", "translate(0," + height + ")")
-                .call(d3.axisBottom(x).ticks(5));
-
-            // Add Y axis
+                .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%B %Y")).ticks(10));
+            console.log(max_reviews)
             let y = d3.scaleLinear()
-                .domain([0, d3.max(data, function (d) { return +d.num_reviews; })])
+                .domain([0, max_reviews])
                 .range([height, 0]);
+
+
             lineplot_svg.append("g")
                 .call(d3.axisLeft(y));
 
-            console.log(sumstat);
-            // color palette
-            let res = Array.from(sumstat.keys()); // list of group names
-            let color = d3.scaleOrdinal()
-                .domain(res)
-                .range(['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628', '#f781bf',
-                 '#999999', '#14d0df', '#81628d', '#04cece','#039999', '#039999', '#23855d', '#23855d', '#b5e655', '#f5803c', '#fbcfb6' ])
-
             // Draw the line
             lineplot_svg.selectAll(".line")
-                .data(sumstat)
+                .data(Object.entries(data))
                 .enter()
                 .append("path")
                 .attr("fill", "none")
-                .attr("stroke", function (d) { return color(d.genre) })
+                .attr("stroke", function (d) { return d[1].color; })
                 .attr("stroke-width", 1.5)
                 .attr("d", function (d) {
                     return d3.line()
-                        .x(function (d) { return x(d.timestamp); })
-                        .y(function (d) { return y(+d.num_reviews); })
-                        (d.values)
+                        .x(function (d) { return x(new Date(d[0])); })
+                        .y(function (d) { return y(+d[1]); })
+                        (d[1].reviewstime)
                 })
 
 
@@ -525,21 +590,155 @@
         }
 
 
+        function addFiltersAndLegend() {
+            let elemcounter = 0;
+            var movie_data = $.map(Object.entries(movies), function (obj) {
+                movie_obj = {}
+                if (elemcounter < 10) {
+                    movie_obj.selected = true
+                    elemcounter++;
+                }
+                movie_obj.id = obj[0];
+                movie_obj.text = obj[1].title;
+                return movie_obj;
+            });
+            elemcounter = 0;
+            var genre_data = $.map(Array.from(all_genres), function (genre) {
+                genre_obj = {}
+                if (elemcounter < 5) {
+                    genre_obj.selected = true
+                    elemcounter++;
+                }
+                genre_obj.id = genre;
+                genre_obj.text = genre;
+                return genre_obj;
+            });
+
+            $(".movie-select").select2({
+                data: movie_data
+            });
+
+            $(".genre-select").select2({
+                data: genre_data
+            });
+
+            const container = d3.select('.legendmain');
+
+            container.append('h1')
+                .attr('class', 'title')
+                .text('Kickstarter Pledges');
+
+            // LEGEND
+            const legendContainer = container
+                .append('div')
+                .attr('class', 'legend');
+
+            legendContainer
+                .append('h2')
+                .attr('class', 'subtitle')
+                .text('Legend');
+
+            legendContainer
+                .append('p')
+                .attr('class', 'subdescription')
+                .text('Hover to visualize each category.');
+
+            const legendWidth = 200;
+            const legendHeight = 20;
+
+            const legendSVG = legendContainer
+                .append('svg')
+                .attr('viewBox', `0, 0 ${legendWidth} ${legendHeight}`);
+
+            const width = 500;
+            const height = 500;
+
+            const legendGroups = legendSVG.selectAll('g.legend')
+                .data(all_genres)
+                .enter()
+                .append('g')
+                .attr('class', 'legend')
+                .on('mouseenter', function () {
+                    // expand the selected rectangle, contract every other one
+                    // restore on mouseout
+                    d3.selectAll('g.legend rect')
+                        .transition()
+                        .attr('width', 0);
+                    d3.select(this)
+                        .select('rect')
+                        .transition()
+                        .attr('x', 0)
+                        .attr('width', legendWidth);
+                    // introduce the text element with a small delay
+                    d3.select(this)
+                        .select('text')
+                        .transition()
+                        .delay(200)
+                        .style('opacity', 1);
+                })
+                .on('mouseout', function () {
+                    d3.selectAll('g.legend rect')
+                        .transition()
+                        .attr('x', (d, i) => legendWidth / all_genres.size * i)
+                        .attr('width', legendWidth / all_genres.size);
+                    d3.select(this)
+                        .select('text')
+                        .transition()
+                        .style('opacity', 0);
+                });
+            // add colored rectangles for each category
+            legendGroups.append('rect')
+                .attr('x', (d, i) => legendWidth / all_genres.size * i)
+                .attr('y', 0)
+                .attr('width', legendWidth / all_genres.size)
+                .attr('height', legendHeight)
+                .attr('fill', (d) => colorScale(d));
+            // add text elements right above the rectangle elements
+            legendGroups.append('text')
+                .attr('x', legendWidth / 15)
+                .attr('y', legendHeight / 2)
+                .text(d => d)
+                .attr('font-size', '0.6rem')
+                .attr('fill', '#fff')
+                .attr('alignment-baseline', 'middle')
+                .style('pointer-events', 'none')
+                .style('opacity', 0);
+        }
+
+        function applyFilters(first_load = false) {
+            selected_movies = new Set();
+            selected_genres = new Set();
+
+            if (document.getElementById('genreselect').style.display == 'block') {
+                sel_genres_obs = $('.genre-select').select2('data');
+                for (let i = 0; i < sel_genres_obs.length; i++) {
+                    selected_genres.add(sel_genres_obs[i].id)
+                }
+            } else {
+                sel_movies_obs = $('.movie-select').select2('data');
+                for (let i = 0; i < sel_movies_obs.length; i++) {
+                    selected_movies.add(sel_movies_obs[i].id)
+                }
+            }
+            if (!first_load && (selected_genres.size != 0 || selected_movies.size != 0)) {
+                console.log("a")
+                draw()
+            } else {
+                initGlobalVariables()
+            }
+        }
+
         function draw() {
+            initGlobalVariables()
+
             d3.csv("../dataset/ratings.csv")
                 .then((data) => {
                     movie_popularity = preProcessRatings(data)
-                    movies_pop_arr = Object.values(movie_popularity)
-                    genres_reviews = preProcessGenresReviews(movie_popularity);
-                    genres_through_time = preProcessGenreReviewsThroughTime(movie_popularity);
-                    //drawBoxPlot(movie_popularity)
-                    genre_ratings = preProcessBoxPlot(movie_popularity)
-                    genres_reviews = preProcessGenresReviews(movie_popularity);
-                    console.log(genres_reviews)
-                    drawBoxPlot(genre_ratings)
-                    drawBarChart(genres_reviews)
-                    drawScatterPlot(movies_pop_arr)
-                    drawLinePlot(genres_through_time)
+                    items_ratings = preProcessItemsPopularity(movie_popularity)
+                    drawScatterPlot(movie_popularity)
+                    drawBoxPlot(items_ratings)
+                    drawBarChart(items_ratings)
+                    drawLinePlot(items_ratings)
                 }).catch(err => { console.log(err) });
 
             d3.csv("../dataset/tags.csv")
@@ -547,19 +746,14 @@
                     tags = preProcessTags(data);
                     drawWordCloud(tags);
                 }).catch(err => { console.log(err) });
-
-
-
-            //d3.csv("https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/5_OneCatSevNumOrdered.csv", function(data) {
-            //    console.log(data)
-            //});
-
         }
 
         // initial load of data that only will be executed once
         d3.csv("../dataset/movies.csv")
             .then((data) => {
                 preProcessMovies(data)
+                addFiltersAndLegend()
+                applyFilters(true)
                 draw()
             }).catch(err => { console.log(err) });
 
