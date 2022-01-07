@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"
+        integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
     <script type="text/javascript" src="http://d3js.org/d3.v6.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.slim.js"
         integrity="sha256-HwWONEZrpuoh951cQD1ov2HUK5zA5DwJ1DNUXaM6FsY=" crossorigin="anonymous"></script>
@@ -27,11 +28,11 @@
         <span><a class="effect-1" href="#Time"><i class='fas fa-caret-right'></i> Time Line Plot</a></span>
         <span><a class="effect-1" href="#Scatter"><i class='fas fa-caret-right'></i> Scatter Plot</a></span>
         <span><a class="effect-1" href="#Word"><i class='fas fa-caret-right'></i> Word Cloud</a></span>
-        
+
         <hr style="margin: 30px 0px 30px 0px; color: white; border:1px solid #fff">
 
         <h1 style="padding: 0px 0px 30px 0px">FILTERS</h1>
-        
+
         <div class="wrapper">
             <input type="radio" name="select" id="option-1" checked onclick="selectChange()">
             <input type="radio" name="select" id="option-2" onclick="selectChange()">
@@ -44,7 +45,7 @@
                 <span>Movies</span>
             </label>
         </div>
-        
+
         <div id="genreselect" style="display: block;">
             <select class="genre-select" style="width: 100%" multiple="multiple"></select>
         </div>
@@ -103,27 +104,27 @@
     <script>
         var max_num_tags = 50;
 
-        var rangeSlider = function(){
-        var slider = $('.range-slider'),
-        range = $('.range-slider__range'),
-        value = $('.range-slider__value');
-            
-        slider.each(function(){
-            value.each(function(){
-                var value = $(this).prev().attr('value');
-                $(this).html(value);
-            });
+        var rangeSlider = function () {
+            var slider = $('.range-slider'),
+                range = $('.range-slider__range'),
+                value = $('.range-slider__value');
 
-            range.on('input', function(){
-                $(this).next(value).html(this.value);
+            slider.each(function () {
+                value.each(function () {
+                    var value = $(this).prev().attr('value');
+                    $(this).html(value);
+                });
+
+                range.on('input', function () {
+                    $(this).next(value).html(this.value);
+                });
             });
-        });
         };
 
         rangeSlider();
 
         var movie_popularity, genres_review_counter, max_num_reviews, colorScale,
-            max_item_num_reviews, min_time, max_time, max_reviews,
+            max_item_num_reviews, min_time, max_time, max_reviews, filter_max_date, filter_min_date,
             barchart_svg, lineplot_svg, scatter_svg, box_plot_svg;
 
 
@@ -131,7 +132,7 @@
         var margin = { top: 10, right: 30, bottom: 30, left: 60 },
             width = $(window).width() - margin.left - margin.right - 400,
             height = 600 - margin.top - margin.bottom;
-        
+
         function initGlobalVariables() {
             movie_popularity = {};
             genres_review_counter = {};
@@ -140,15 +141,15 @@
             min_time = new Date();
             max_time = new Date('1750');
             max_reviews = 0;
-           
-           d3.select("#barchart_genres").select("svg").remove()
-           d3.select("#lineplot_genres").select("svg").remove()
-           d3.select("#scatter_movies").select("svg").remove()
-           d3.select("#box_plot_popularity").select("svg").remove()
-           d3.select("#word_cloud_tags").select("svg").remove()
-           d3.select('.legendmain').select("svg").remove()
 
-           colorScale = d3.scaleOrdinal(
+            d3.select("#barchart_genres").select("svg").remove()
+            d3.select("#lineplot_genres").select("svg").remove()
+            d3.select("#scatter_movies").select("svg").remove()
+            d3.select("#box_plot_popularity").select("svg").remove()
+            d3.select("#word_cloud_tags").select("svg").remove()
+            d3.select('.legendmain').select("svg").remove()
+
+            colorScale = d3.scaleOrdinal(
                 ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
                     '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D',
                     '#E6B3B3', '#6680B3', '#66991A', '#FF99E6', '#CCFF1A',
@@ -161,7 +162,7 @@
                     '#4DB3FF', '#1AB399'])
                 .domain(selected_genres ? selected_genres : selected_movies);
 
-           initLegend()
+            initLegend()
         }
 
         function selectChange() {
@@ -212,13 +213,13 @@
             const yScale = d3.scaleLinear()
                 .domain([0, 5])
                 .range([height, 0]);
-            
+
             box_plot_svg = d3.select("#box_plot_popularity")
-               .append("svg")
-               .attr("width", width + margin.left + margin.right)
-               .attr("height", height + margin.top + margin.bottom)
-               .append("g")
-               .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
             var g = box_plot_svg.append("g");
 
@@ -304,13 +305,13 @@
             const x = d3.scaleLinear()
                 .domain([0, max_num_reviews])
                 .range([0, width]);
-            
+
             scatter_svg = d3.select("#scatter_movies")
-               .append("svg")
-               .attr("width", width + margin.left + margin.right)
-               .attr("height", height + margin.top + margin.bottom)
-               .append("g")
-               .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
             scatter_svg.append("g")
                 .attr("transform", `translate(0, ${height})`)
@@ -335,13 +336,17 @@
         }
 
 
-        function parseTimestamp(timestamp) {
+        function parseTimestamp(timestamp, date_obj_format = false) {
             timestamp = parseInt(timestamp);
             let u = new Date(timestamp * 1000);
+            if (date_obj_format) {
+                return u;
+            }
             let temp = parseInt(u.getMonth() + 1);
             if (temp < 10) {
                 temp = '0' + temp;
             }
+
             return u.getFullYear() +
                 '-' + (temp)
         }
@@ -350,13 +355,19 @@
 
         // dataset: userId,movieId,rating,timestamp
         function preProcessRatings(data) {
+            console.log()
             for (let i = 0; i < data.length; i++) {
                 movie_id = data[i].movieId
                 if (document.getElementById('movieselect').style.display == 'block' && !selected_movies.has(movie_id) ||
                     document.getElementById('genreselect').style.display == 'block' && !movies[movie_id].genres.some(g => selected_genres.has(g))) {
                     continue
                 }
-                date = parseTimestamp(data[i].timestamp);
+                date = parseTimestamp(data[i].timestamp, true);
+
+                if (date < filter_min_date || date > filter_max_date) {
+                    continue
+                }
+                date = parseTimestamp(data[i].timestamp, false);
                 if (!movie_popularity[movie_id]) {
                     movie_popularity[movie_id] = {
                         'avg': parseInt(data[i].rating),
@@ -454,7 +465,7 @@
                     }
                 }
             }
-            
+
             for (var [item, item_data] of Object.entries(items_ratings)) {
                 ratings = item_data.ratings.sort((a, b) => a - b);
                 total = 0
@@ -499,11 +510,11 @@
                 .padding(0.2);
 
             barchart_svg = d3.select("#barchart_genres")
-               .append("svg")
-               .attr("width", width + margin.left + margin.right)
-               .attr("height", height + margin.top + margin.bottom)
-               .append("g")
-               .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
             barchart_svg.append("g")
                 .attr("transform", "translate(0," + height + ")")
@@ -581,11 +592,11 @@
                 .range([0, width]);
 
             lineplot_svg = d3.select("#lineplot_genres")
-               .append("svg")
-               .attr("width", width + margin.left + margin.right)
-               .attr("height", height + margin.top + margin.bottom)
-               .append("g")
-               .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
             lineplot_svg.append("g")
                 .attr("transform", "translate(0," + height + ")")
@@ -605,6 +616,7 @@
                 .enter()
                 .append("path")
                 .attr("fill", "none")
+                .attr("class","line")
                 .attr("stroke", function (d) { return d[1].color; })
                 .attr("stroke-width", 1.5)
                 .attr("d", function (d) {
@@ -613,6 +625,97 @@
                         .y(function (d) { return y(+d[1]); })
                         (d[1].reviewstime)
                 })
+                
+
+            var mouseG = lineplot_svg.append("g")
+                .attr("class", "mouse-over-effects");
+
+            mouseG.append("path") // this is the black vertical line to follow mouse
+                .attr("class", "mouse-line")
+                .style("stroke", "black")
+                .style("stroke-width", "1px")
+                .style("opacity", "0");
+
+            var lines = document.getElementsByClassName('line');
+            console.log(lines)
+            var mousePerLine = mouseG.selectAll('.mouse-per-line')
+                .data(Object.entries(data))
+                .enter()
+                .append("g")
+                .attr("class", "mouse-per-line");
+
+            mousePerLine.append("circle")
+                .attr("r", 7)
+                .style("stroke", function (d) {
+                    return d[1].color;
+                })
+                .style("fill", "none")
+                .style("stroke-width", "1px")
+                .style("opacity", "0");
+
+            mousePerLine.append("text")
+                .attr("transform", "translate(10,3)");
+
+            mouseG.append('svg:rect') // append a rect to catch mouse movements on canvas
+                .attr('width', width) // can't catch mouse events on a g element
+                .attr('height', height)
+                .attr('fill', 'none')
+                .attr('pointer-events', 'all')
+                .on('mouseout', function () { // on mouse out hide line, circles and text
+                    d3.select(".mouse-line")
+                        .style("opacity", "0");
+                    d3.selectAll(".mouse-per-line circle")
+                        .style("opacity", "0");
+                    d3.selectAll(".mouse-per-line text")
+                        .style("opacity", "0");
+                })
+                .on('mouseover', function () { // on mouse in show line, circles and text
+                    d3.select(".mouse-line")
+                        .style("opacity", "1");
+                    d3.selectAll(".mouse-per-line circle")
+                        .style("opacity", "1");
+                    d3.selectAll(".mouse-per-line text")
+                        .style("opacity", "1");
+                })
+                .on('mousemove',(event)=> { // mouse moving over canvas
+                    var mouse = d3.pointer(event);
+                    console.log(mouse)
+                    d3.select(".mouse-line")
+                        .attr("d", function () {
+                            var d = "M" + mouse[0] + "," + height;
+                            d += " " + mouse[0] + "," + 0;
+                            return d;
+                        });
+
+                    d3.selectAll(".mouse-per-line")
+                        .attr("transform", function (d, i) {
+                            console.log(width / mouse[0])
+                            var xDate = x.invert(mouse[0]),
+                                bisect = d3.bisector(function (d) { return new Date(d[0]); }).right;
+                            idx = bisect(d.values, xDate);
+
+                            var beginning = 0,
+                                end = lines[i].getTotalLength(),
+                                target = null;
+
+                            while (true) {
+                                target = Math.floor((beginning + end) / 2);
+                                pos = lines[i].getPointAtLength(target);
+                                if ((target === end || target === beginning) && pos.x !== mouse[0]) {
+                                    break;
+                                }
+                                if (pos.x > mouse[0]) end = target;
+                                else if (pos.x < mouse[0]) beginning = target;
+                                else break; //position found
+                            }
+
+                            d3.select(this).select('text')
+                                .text(y.invert(pos.y).toFixed(2))
+                                .style('font-size', '10px');
+
+                            return "translate(" + mouse[0] + "," + pos.y + ")";
+                        });
+                });
 
 
         }
@@ -633,7 +736,7 @@
                     document.getElementById('genreselect').style.display == 'block' && !movies[data[i].movieId].genres.some(g => selected_genres.has(g))) {
                     continue
                 }
-                if (!tags[data[i].tag]){
+                if (!tags[data[i].tag]) {
                     tags[data[i].tag] = 1;
                 } else {
                     tags[data[i].tag] += 1;
@@ -648,10 +751,10 @@
             tags = tags.slice(0, max_num_tags)
             max = tags[0][1]
             min = tags[tags.length - 1][1]
-            if (min==max){
+            if (min == max) {
                 max += 1
             }
-            scaleData(20, 70, min, max+1, tags)
+            scaleData(20, 70, min, max + 1, tags)
             return tags
         }
 
@@ -710,17 +813,17 @@
                 .append('p')
                 .attr('class', 'subdescription')
                 .text('Hover to visualize each category.');
-            
+
             initLegend()
         }
-        
+
         function initLegend() {
             const legendWidth = 200;
             const legendHeight = 20;
-            
+
             d3.select('.legendmain').select("svg").remove();
 
-            const legendSVG =  d3.select('.legendmain')
+            const legendSVG = d3.select('.legendmain')
                 .append('svg')
                 .attr('viewBox', `0, 0 ${legendWidth} ${legendHeight}`);
 
@@ -760,23 +863,23 @@
                         .transition()
                         .style('opacity', 0);
                 });
-                // add colored rectangles for each category
-                legendGroups.append('rect')
-                    .attr('x', (d, i) => legendWidth / (selected_genres.size > 0 ? selected_genres.size : selected_movies.size) * i)
-                    .attr('y', 0)
-                    .attr('width', legendWidth / (selected_genres.size > 0 ? selected_genres.size : selected_movies.size))
-                    .attr('height', legendHeight)
-                    .attr('fill', (d) => colorScale(d));
-                // add text elements right above the rectangle elements
-                legendGroups.append('text')
-                    .attr('x', legendWidth / 15)
-                    .attr('y', legendHeight / 2)
-                    .text(d => {return document.getElementById('genreselect').style.display == 'block' ? d : movies[d].title})
-                    .attr('font-size', '0.6rem')
-                    .attr('fill', '#fff')
-                    .attr('alignment-baseline', 'middle')
-                    .style('pointer-events', 'none')
-                    .style('opacity', 0);
+            // add colored rectangles for each category
+            legendGroups.append('rect')
+                .attr('x', (d, i) => legendWidth / (selected_genres.size > 0 ? selected_genres.size : selected_movies.size) * i)
+                .attr('y', 0)
+                .attr('width', legendWidth / (selected_genres.size > 0 ? selected_genres.size : selected_movies.size))
+                .attr('height', legendHeight)
+                .attr('fill', (d) => colorScale(d));
+            // add text elements right above the rectangle elements
+            legendGroups.append('text')
+                .attr('x', legendWidth / 15)
+                .attr('y', legendHeight / 2)
+                .text(d => { return document.getElementById('genreselect').style.display == 'block' ? d : movies[d].title })
+                .attr('font-size', '0.6rem')
+                .attr('fill', '#fff')
+                .attr('alignment-baseline', 'middle')
+                .style('pointer-events', 'none')
+                .style('opacity', 0);
         }
 
         function applyFilters(first_load = false) {
@@ -785,6 +888,11 @@
             selected_movies = new Set();
             selected_genres = new Set();
             max_num_tags = document.getElementById("num_tags").value;
+            range = document.getElementById('slider').value.split(',');
+            filter_min_date = new Date(range[0]);
+            console.log(filter_min_date);
+
+            filter_max_date = new Date(range[1]);
 
             if (document.getElementById('genreselect').style.display == 'block') {
                 sel_genres_obs = $('.genre-select').select2('data');
@@ -804,7 +912,7 @@
         }
 
         function handleLoading(loading) {
-            if (loading) { 
+            if (loading) {
                 document.getElementById('loadingIcon').style.display = 'block';
                 document.getElementById('dataGraphs').style.display = 'none';
             } else {
