@@ -23,11 +23,11 @@
 
     <div class="sidenav">
         <h1>VISUALIZATIONS</h1>
-        <span><a class="effect-1" href="#BarChart"><i class='fas fa-caret-right'></i> Bar Chart</a></span>
-        <span><a class="effect-1" href="#Box"><i class='fas fa-caret-right'></i> Box Plot</a></span>
-        <span><a class="effect-1" href="#Time"><i class='fas fa-caret-right'></i> Time Line Plot</a></span>
-        <span><a class="effect-1" href="#Scatter"><i class='fas fa-caret-right'></i> Scatter Plot</a></span>
-        <span><a class="effect-1" href="#Word"><i class='fas fa-caret-right'></i> Word Cloud</a></span>
+        <span><a class="effect-1" href="#barchart_genres"><i class='fas fa-caret-right'></i> Bar Chart</a></span>
+        <span><a class="effect-1" href="#box_plot_popularity"><i class='fas fa-caret-right'></i> Box Plot</a></span>
+        <span><a class="effect-1" href="#lineplot_genres"><i class='fas fa-caret-right'></i> Time Line Plot</a></span>
+        <span><a class="effect-1" href="#scatter_movies"><i class='fas fa-caret-right'></i> Scatter Plot</a></span>
+        <span><a class="effect-1" href="#word_cloud_tags"><i class='fas fa-caret-right'></i> Word Cloud</a></span>
 
         <hr style="margin: 30px 0px 30px 0px; color: white; border:1px solid #fff">
 
@@ -59,7 +59,7 @@
 
         <span style="color: white; font-size: 18px; padding:5px 0 10px 0;float:left">Number of Tags</span>
         <div class="range-slider">
-            <input class="range-slider__range" id="num_tags" type="range" value="50" min="1" max="300">
+            <input class="range-slider__range" id="num_tags" type="range" value="50" min="1" max="300" scale>
             <span class="range-slider__value">50</span>
         </div>
 
@@ -87,16 +87,11 @@
         <div class="legendmain"></div>
 
         <div id="dataGraphs">
-            <div id="BarChart">Bar Chart</div>
-            <div id="barchart_genres"></div>
-            <div id="Box">Box Plot</div>
-            <div id="box_plot_popularity"></div>
-            <div id="Time">Time Line Plot</div>
-            <div id="lineplot_genres"></div>
-            <div id="Scatter">Scatter Plot</div>
-            <div id="scatter_movies"></div>
-            <div id="Word">Word Cloud</div>
-            <div id="word_cloud_tags"></div>
+            <div id="barchart_genres">Bar Chart</div>
+            <div id="box_plot_popularity">Box Plot</div>
+            <div id="lineplot_genres">Time Line Plot</div>
+            <div id="scatter_movies">Scatter Plot</div>
+            <div id="word_cloud_tags">Word Cloud</div>
         </div>
 
     </div>
@@ -131,7 +126,7 @@
         // set the dimensions and margins of the graph
         var margin = { top: 10, right: 30, bottom: 30, left: 60 },
             width = $(window).width() - margin.left - margin.right - 400,
-            height = 600 - margin.top - margin.bottom;
+            height = 400 - margin.top - margin.bottom;
 
         function initGlobalVariables() {
             movie_popularity = {};
@@ -754,7 +749,7 @@
             if (min == max) {
                 max += 1
             }
-            scaleData(20, 70, min, max + 1, tags)
+            scaleData(20, 40, min, max + 1, tags)
             return tags
         }
 
@@ -786,33 +781,14 @@
             });
 
             $(".movie-select").select2({
-                data: movie_data
+                data: movie_data,
+                closeOnSelect: false
             });
 
             $(".genre-select").select2({
-                data: genre_data
+                data: genre_data,
+                closeOnSelect: false
             });
-
-            const container = d3.select('.legendmain');
-
-            container.append('h1')
-                .attr('class', 'title')
-                .text('Kickstarter Pledges');
-
-            // LEGEND
-            const legendContainer = container
-                .append('div')
-                .attr('class', 'legend');
-
-            legendContainer
-                .append('h2')
-                .attr('class', 'subtitle')
-                .text('Legend');
-
-            legendContainer
-                .append('p')
-                .attr('class', 'subdescription')
-                .text('Hover to visualize each category.');
 
             initLegend()
         }

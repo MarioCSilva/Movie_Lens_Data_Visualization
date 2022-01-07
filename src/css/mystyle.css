@@ -5,7 +5,8 @@ body {
 .sidenav {
   text-align:center;
   height: 100%;
-  width: 287px;
+  width: 20%;
+  min-width: 245px;
   position: fixed;
   z-index: 1;
   top: 0;
@@ -56,7 +57,7 @@ a > span:after {
 }
 
 .main {
-  margin-left: 360px;
+  margin-left: max(290px, 25%);
   /* Same as the width of the sidenav */
   font-size: 28px;
   /* Increased text to enable scrolling */
@@ -74,17 +75,16 @@ a > span:after {
 
 .wrapper{
   display: inline-flex;
-  background: #fff;
   height: 35px;
-  width: 100%;
+  width: 99.3%;
   align-items: center;
   justify-content: space-evenly;
-  border-radius: 4px 4px 0px 0px;
   padding: 6px 0px 20px 0px;
-  box-shadow: 5px 5px 30px rgba(0,0,0,0.2);
+  border: 1px solid rgba(255, 255, 255, 1);
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
 }
 .wrapper .option{
-  background: #fff;
   height: 100%;
   width: 100%;
   display: flex;
@@ -94,7 +94,6 @@ a > span:after {
   border-radius: 5px;
   cursor: pointer;
   padding: 0;
-  border: 2px solid lightgrey;
   transition: all 0.3s ease;
 }
 .wrapper .option .dot{
@@ -111,7 +110,6 @@ a > span:after {
   left: 4px;
   width: 12px;
   height: 12px;
-  background: #0069d9;
   border-radius: 50%;
   opacity: 0;
   transform: scale(1.5);
@@ -119,14 +117,18 @@ a > span:after {
 }
 input[type="radio"]{
   display: none;
+  color: #0069d9;
 }
 #option-1:checked:checked ~ .option-1,
 #option-2:checked:checked ~ .option-2{
-  border-color: #0069d9;
-  background: #0069d9;
+  background: #fff;
 }
 #option-1:checked:checked ~ .option-1 .dot,
 #option-2:checked:checked ~ .option-2 .dot{
+  border:3px solid #0069d9;
+  width: 8px;
+  height: 8px;
+  transform: scale(1.5);
   background: #fff;
 }
 #option-1:checked:checked ~ .option-1 .dot::before,
@@ -136,11 +138,11 @@ input[type="radio"]{
 }
 .wrapper .option span{
   font-size: 20px;
-  color: #808080;
+  color: #fff;
 }
 #option-1:checked:checked ~ .option-1 span,
 #option-2:checked:checked ~ .option-2 span{
-  color: #fff;
+  color: #0069d9;
 }
 .box-1 {
 	height: 70px;
@@ -159,7 +161,7 @@ input[type="radio"]{
 	cursor: pointer;
 }
 .btn-one {
-	color: #FFF;
+	color: #fff;
 	transition: all 0.3s;
 	position: relative;
 }
@@ -220,7 +222,7 @@ input[type="radio"]{
   width: calc(100% - (73px));
   height: 10px;
   border-radius: 5px;
-  background: #d7dcdf;
+  background: #0069d9;
   outline: none;
   padding: 0;
   margin: 0;
@@ -231,7 +233,7 @@ input[type="radio"]{
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #0069d9;
+  background: #fff;
   cursor: pointer;
   -webkit-transition: background 0.15s ease-in-out;
   transition: background 0.15s ease-in-out;
@@ -247,7 +249,7 @@ input[type="radio"]{
   height: 20px;
   border: 0;
   border-radius: 50%;
-  background: #0069d9;
+  background: #fff;
   cursor: pointer;
   -moz-transition: background 0.15s ease-in-out;
   transition: background 0.15s ease-in-out;
@@ -257,11 +259,11 @@ input[type="radio"]{
   display: inline-block;
   position: relative;
   width: 27px;
-  color: #fff;
+  color: #0069d9;
   line-height: 20px;
   text-align: center;
   border-radius: 3px;
-  background: #0069d9;
+  background: #fff;
   padding: 5px 10px;
   margin-left: 8px;
 }
@@ -272,7 +274,7 @@ input[type="radio"]{
   width: 0;
   height: 0;
   border-top: 7px solid transparent;
-  border-right: 7px solid #0069d9;
+  border-right: 7px solid #fff;
   border-bottom: 7px solid transparent;
   content: "";
 }
