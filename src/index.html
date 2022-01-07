@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
     <script type="text/javascript" src="http://d3js.org/d3.v6.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.slim.js"
         integrity="sha256-HwWONEZrpuoh951cQD1ov2HUK5zA5DwJ1DNUXaM6FsY=" crossorigin="anonymous"></script>
@@ -20,11 +21,17 @@
 <body>
 
     <div class="sidenav">
-        <h1>FILTERS</h1>
-        <h3>Time Interval</h3>
-        <input type="text" id="slider" class="slider">
-        <hr style="margin: 50px 0px 50px 0px; color: white">
+        <h1>VISUALIZATIONS</h1>
+        <span><a class="effect-1" href="#BarChart"><i class='fas fa-caret-right'></i> Bar Chart</a></span>
+        <span><a class="effect-1" href="#Box"><i class='fas fa-caret-right'></i> Box Plot</a></span>
+        <span><a class="effect-1" href="#Time"><i class='fas fa-caret-right'></i> Time Line Plot</a></span>
+        <span><a class="effect-1" href="#Scatter"><i class='fas fa-caret-right'></i> Scatter Plot</a></span>
+        <span><a class="effect-1" href="#Word"><i class='fas fa-caret-right'></i> Word Cloud</a></span>
+        
+        <hr style="margin: 30px 0px 30px 0px; color: white; border:1px solid #fff">
 
+        <h1 style="padding: 0px 0px 30px 0px">FILTERS</h1>
+        
         <div class="wrapper">
             <input type="radio" name="select" id="option-1" checked onclick="selectChange()">
             <input type="radio" name="select" id="option-2" onclick="selectChange()">
@@ -37,12 +44,24 @@
                 <span>Movies</span>
             </label>
         </div>
+        
         <div id="genreselect" style="display: block;">
-            <select class="genre-select" style="width: 324" multiple="multiple"></select>
+            <select class="genre-select" style="width: 100%" multiple="multiple"></select>
         </div>
         <div id="movieselect" style="display: none;">
-            <select class="movie-select" id="movieselect" style="width: 324" multiple="multiple"></select>
+            <select class="movie-select" id="movieselect" style="width: 100%" multiple="multiple"></select>
         </div>
+
+        <div style="padding: 60px 0px 20px 0px">
+            <input type="text" id="slider" class="slider">
+        </div>
+
+        <span style="color: white; font-size: 18px; padding:5px 0 10px 0;float:left">Number of Tags</span>
+        <div class="range-slider">
+            <input class="range-slider__range" id="num_tags" type="range" value="50" min="1" max="300">
+            <span class="range-slider__value">50</span>
+        </div>
+
         <div class="box-1">
             <div id="applyfilter" onclick="applyFilters()" class="btn btn-one">
                 <span>APPLY FILTERS</span>
@@ -53,31 +72,71 @@
 
 
     <div class="main">
+        <div class="middle" id="loadingIcon">
+            <div class="barload barload1"></div>
+            <div class="barload barload2"></div>
+            <div class="barload barload3"></div>
+            <div class="barload barload4"></div>
+            <div class="barload barload5"></div>
+            <div class="barload barload6"></div>
+            <div class="barload barload7"></div>
+            <div class="barload barload8"></div>
+        </div>
+
         <div class="legendmain"></div>
-        <div id="barchart_genres"></div>
-        <div id="lineplot_genres"></div>
-        <div id="box_plot_popularity"></div>
-        <div id="scatter_movies"></div>
-        <div id="word_cloud_tags"></div>
+
+        <div id="dataGraphs">
+            <div id="BarChart">Bar Chart</div>
+            <div id="barchart_genres"></div>
+            <div id="Box">Box Plot</div>
+            <div id="box_plot_popularity"></div>
+            <div id="Time">Time Line Plot</div>
+            <div id="lineplot_genres"></div>
+            <div id="Scatter">Scatter Plot</div>
+            <div id="scatter_movies"></div>
+            <div id="Word">Word Cloud</div>
+            <div id="word_cloud_tags"></div>
+        </div>
+
     </div>
 
     <script>
-        var movie_popularity, genres_review_counter, max_num_reviews, max_item_num_reviews,
-            max_num_tags, min_time, max_time, max_reviews,
+        var max_num_tags = 50;
+
+        var rangeSlider = function(){
+        var slider = $('.range-slider'),
+        range = $('.range-slider__range'),
+        value = $('.range-slider__value');
+            
+        slider.each(function(){
+            value.each(function(){
+                var value = $(this).prev().attr('value');
+                $(this).html(value);
+            });
+
+            range.on('input', function(){
+                $(this).next(value).html(this.value);
+            });
+        });
+        };
+
+        rangeSlider();
+
+        var movie_popularity, genres_review_counter, max_num_reviews, colorScale,
+            max_item_num_reviews, min_time, max_time, max_reviews,
             barchart_svg, lineplot_svg, scatter_svg, box_plot_svg;
+
 
         // set the dimensions and margins of the graph
         var margin = { top: 10, right: 30, bottom: 30, left: 60 },
-            width = 1200 - margin.left - margin.right,
+            width = $(window).width() - margin.left - margin.right - 400,
             height = 600 - margin.top - margin.bottom;
-        
         
         function initGlobalVariables() {
             movie_popularity = {};
             genres_review_counter = {};
             max_num_reviews = 0;
             max_item_num_reviews = 0;
-            max_num_tags = 50;
             min_time = new Date();
             max_time = new Date('1750');
             max_reviews = 0;
@@ -87,6 +146,22 @@
            d3.select("#scatter_movies").select("svg").remove()
            d3.select("#box_plot_popularity").select("svg").remove()
            d3.select("#word_cloud_tags").select("svg").remove()
+           d3.select('.legendmain').select("svg").remove()
+
+           colorScale = d3.scaleOrdinal(
+                ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
+                    '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D',
+                    '#E6B3B3', '#6680B3', '#66991A', '#FF99E6', '#CCFF1A',
+                    '#FF1A66', '#E6331A', '#33FFCC', '#B366CC', '#4D8000',
+                    '#B33300', '#CC80CC', '#66664D', '#991AFF', '#E666FF',
+                    '#E666B3', '#33991A', '#CC9999', '#B3B31A', '#00E680',
+                    '#4D8066', '#809980', '#E6FF80', '#1AFF33', '#999933',
+                    '#FF3380', '#CCCC00', '#66E64D', '#4D80CC', '#9900B3',
+                    '#E64D66', '#4DB380', '#FF4D4D', '#99E6E6', '#6666FF',
+                    '#4DB3FF', '#1AB399'])
+                .domain(selected_genres ? selected_genres : selected_movies);
+
+           initLegend()
         }
 
         function selectChange() {
@@ -109,14 +184,11 @@
 
         let movies = {};
         let all_genres = new Set();
-        let colorScale = undefined;
 
         let selected_movies = new Set();
         let selected_genres = new Set();
 
         let barWidth = 30
-
-        initGlobalVariables()
 
         // Preprocess movies
         // Uses global variable movies and all_genres
@@ -127,18 +199,6 @@
                 movies[data[i].movieId] = { 'title': data[i].title, 'genres': genres }
                 genres.forEach(genre => all_genres.add(genre))
             }
-            colorScale = d3.scaleOrdinal(
-                ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
-                    '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D',
-                    '#E6B3B3', '#6680B3', '#66991A', '#FF99E6', '#CCFF1A',
-                    '#FF1A66', '#E6331A', '#33FFCC', '#B366CC', '#4D8000',
-                    '#B33300', '#CC80CC', '#66664D', '#991AFF', '#E666FF',
-                    '#E666B3', '#33991A', '#CC9999', '#B3B31A', '#00E680',
-                    '#4D8066', '#809980', '#E6FF80', '#1AFF33', '#999933',
-                    '#FF3380', '#CCCC00', '#66E64D', '#4D80CC', '#9900B3',
-                    '#E64D66', '#4DB380', '#FF4D4D', '#99E6E6', '#6666FF',
-                    '#4DB3FF', '#1AB399'])
-                .domain(all_genres);
         }
 
 
@@ -372,7 +432,7 @@
                 for (let movie_id of selected_movies) {
                     item = movies[movie_id].title
                     dates = movie_popularity[movie_id].dates;
-                    items_ratings[item] = { 'ratings': movie_popularity[movie_id].ratings.filter(Number), 'reviewstime': {} }
+                    items_ratings[item] = { 'ratings': movie_popularity[movie_id].ratings.filter(Number), 'reviewstime': {}, 'id': movie_id }
                     for (let date in dates) {
                         all_reviews = dates[date].length;
                         date = parseTime(date);
@@ -419,7 +479,7 @@
                     d3.quantile(ratings, .75)
                 ]
                 obj["whiskers"] = [localMin, localMax];
-                obj["color"] = colorScale(item);
+                obj["color"] = selected_genres.size > 0 ? colorScale(item) : colorScale(item_data.id);
                 obj["reviewstime"] = {};
                 obj["reviewstime"] = rev_time
                 items_ratings[item] = obj;
@@ -530,7 +590,7 @@
             lineplot_svg.append("g")
                 .attr("transform", "translate(0," + height + ")")
                 .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%B %Y")).ticks(10));
-            console.log(max_reviews)
+
             let y = d3.scaleLinear()
                 .domain([0, max_reviews])
                 .range([height, 0]);
@@ -569,7 +629,11 @@
         function preProcessTags(data) {
             tags = {}
             for (let i = 0; i < data.length; i++) {
-                if (!tags[data[i].tag]) {
+                if (document.getElementById('movieselect').style.display == 'block' && !selected_movies.has(data[i].movieId) ||
+                    document.getElementById('genreselect').style.display == 'block' && !movies[data[i].movieId].genres.some(g => selected_genres.has(g))) {
+                    continue
+                }
+                if (!tags[data[i].tag]){
                     tags[data[i].tag] = 1;
                 } else {
                     tags[data[i].tag] += 1;
@@ -581,11 +645,13 @@
             tags.sort(
                 (first, second) => { return second[1] - first[1] }
             )
-
             tags = tags.slice(0, max_num_tags)
             max = tags[0][1]
-            min = tags[max_num_tags - 1][1]
-            scaleData(20, 70, min, max, tags)
+            min = tags[tags.length - 1][1]
+            if (min==max){
+                max += 1
+            }
+            scaleData(20, 70, min, max+1, tags)
             return tags
         }
 
@@ -594,7 +660,8 @@
             let elemcounter = 0;
             var movie_data = $.map(Object.entries(movies), function (obj) {
                 movie_obj = {}
-                if (elemcounter < 10) {
+                if (elemcounter < 5) {
+                    selected_movies.add(obj[0])
                     movie_obj.selected = true
                     elemcounter++;
                 }
@@ -606,6 +673,7 @@
             var genre_data = $.map(Array.from(all_genres), function (genre) {
                 genre_obj = {}
                 if (elemcounter < 5) {
+                    selected_genres.add(genre)
                     genre_obj.selected = true
                     elemcounter++;
                 }
@@ -642,11 +710,17 @@
                 .append('p')
                 .attr('class', 'subdescription')
                 .text('Hover to visualize each category.');
-
+            
+            initLegend()
+        }
+        
+        function initLegend() {
             const legendWidth = 200;
             const legendHeight = 20;
+            
+            d3.select('.legendmain').select("svg").remove();
 
-            const legendSVG = legendContainer
+            const legendSVG =  d3.select('.legendmain')
                 .append('svg')
                 .attr('viewBox', `0, 0 ${legendWidth} ${legendHeight}`);
 
@@ -654,7 +728,7 @@
             const height = 500;
 
             const legendGroups = legendSVG.selectAll('g.legend')
-                .data(all_genres)
+                .data(selected_genres.size > 0 ? selected_genres : selected_movies)
                 .enter()
                 .append('g')
                 .attr('class', 'legend')
@@ -679,35 +753,38 @@
                 .on('mouseout', function () {
                     d3.selectAll('g.legend rect')
                         .transition()
-                        .attr('x', (d, i) => legendWidth / all_genres.size * i)
-                        .attr('width', legendWidth / all_genres.size);
+                        .attr('x', (d, i) => legendWidth / (selected_genres.size > 0 ? selected_genres.size : selected_movies.size) * i)
+                        .attr('width', legendWidth / (selected_genres.size > 0 ? selected_genres.size : selected_movies.size));
                     d3.select(this)
                         .select('text')
                         .transition()
                         .style('opacity', 0);
                 });
-            // add colored rectangles for each category
-            legendGroups.append('rect')
-                .attr('x', (d, i) => legendWidth / all_genres.size * i)
-                .attr('y', 0)
-                .attr('width', legendWidth / all_genres.size)
-                .attr('height', legendHeight)
-                .attr('fill', (d) => colorScale(d));
-            // add text elements right above the rectangle elements
-            legendGroups.append('text')
-                .attr('x', legendWidth / 15)
-                .attr('y', legendHeight / 2)
-                .text(d => d)
-                .attr('font-size', '0.6rem')
-                .attr('fill', '#fff')
-                .attr('alignment-baseline', 'middle')
-                .style('pointer-events', 'none')
-                .style('opacity', 0);
+                // add colored rectangles for each category
+                legendGroups.append('rect')
+                    .attr('x', (d, i) => legendWidth / (selected_genres.size > 0 ? selected_genres.size : selected_movies.size) * i)
+                    .attr('y', 0)
+                    .attr('width', legendWidth / (selected_genres.size > 0 ? selected_genres.size : selected_movies.size))
+                    .attr('height', legendHeight)
+                    .attr('fill', (d) => colorScale(d));
+                // add text elements right above the rectangle elements
+                legendGroups.append('text')
+                    .attr('x', legendWidth / 15)
+                    .attr('y', legendHeight / 2)
+                    .text(d => {return document.getElementById('genreselect').style.display == 'block' ? d : movies[d].title})
+                    .attr('font-size', '0.6rem')
+                    .attr('fill', '#fff')
+                    .attr('alignment-baseline', 'middle')
+                    .style('pointer-events', 'none')
+                    .style('opacity', 0);
         }
 
         function applyFilters(first_load = false) {
+            handleLoading(true);
+
             selected_movies = new Set();
             selected_genres = new Set();
+            max_num_tags = document.getElementById("num_tags").value;
 
             if (document.getElementById('genreselect').style.display == 'block') {
                 sel_genres_obs = $('.genre-select').select2('data');
@@ -720,17 +797,24 @@
                     selected_movies.add(sel_movies_obs[i].id)
                 }
             }
+            initGlobalVariables()
             if (!first_load && (selected_genres.size != 0 || selected_movies.size != 0)) {
-                console.log("a")
                 draw()
+            }
+        }
+
+        function handleLoading(loading) {
+            if (loading) { 
+                document.getElementById('loadingIcon').style.display = 'block';
+                document.getElementById('dataGraphs').style.display = 'none';
             } else {
-                initGlobalVariables()
+                document.getElementById('loadingIcon').style.display = 'none';
+                document.getElementById('dataGraphs').style.display = 'block';
             }
         }
 
         function draw() {
-            initGlobalVariables()
-
+            handleLoading(true);
             d3.csv("../dataset/ratings.csv")
                 .then((data) => {
                     movie_popularity = preProcessRatings(data)
@@ -739,14 +823,18 @@
                     drawBoxPlot(items_ratings)
                     drawBarChart(items_ratings)
                     drawLinePlot(items_ratings)
+                    d3.csv("../dataset/tags.csv")
+                        .then((data) => {
+                            tags = preProcessTags(data);
+                            drawWordCloud(tags);
+                            handleLoading(false);
+                        }).catch(err => { console.log(err) });
                 }).catch(err => { console.log(err) });
 
-            d3.csv("../dataset/tags.csv")
-                .then((data) => {
-                    tags = preProcessTags(data);
-                    drawWordCloud(tags);
-                }).catch(err => { console.log(err) });
+
         }
+
+        initGlobalVariables()
 
         // initial load of data that only will be executed once
         d3.csv("../dataset/movies.csv")
