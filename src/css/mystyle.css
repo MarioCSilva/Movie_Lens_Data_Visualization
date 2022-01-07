@@ -76,7 +76,7 @@ a > span:after {
 .wrapper{
   display: inline-flex;
   height: 35px;
-  width: 99.3%;
+  width: calc(100% - 2px);
   align-items: center;
   justify-content: space-evenly;
   padding: 6px 0px 20px 0px;
