@@ -87,11 +87,21 @@
         <div class="legendmain"></div>
 
         <div id="dataGraphs">
-            <div id="barchart_genres">Bar Chart</div>
-            <div id="box_plot_popularity">Box Plot</div>
-            <div id="lineplot_genres">Time Line Plot</div>
-            <div id="scatter_movies">Scatter Plot</div>
-            <div id="word_cloud_tags">Word Cloud</div>
+            <div id="barchart_genres">
+                <h3>Bar Chart</h3>
+            </div>
+            <div id="box_plot_popularity">
+                <h3>Box Plot</h3>
+            </div>
+            <div id="lineplot_genres">
+                <h3>Time Line Plot</h3>
+            </div>
+            <div id="scatter_movies">
+                <h3>Scatter Plot</h3>
+            </div>
+            <div id="word_cloud_tags">
+                <h3>Word Cloud</h3>
+            </div>
         </div>
 
     </div>
@@ -125,10 +135,11 @@
 
         // set the dimensions and margins of the graph
         var margin = { top: 10, right: 30, bottom: 30, left: 60 },
-            width = $(window).width() - margin.left - margin.right - 400,
+            width = $(window).width() / 1.5 - margin.left - margin.right,
             height = 400 - margin.top - margin.bottom;
 
         function initGlobalVariables() {
+            width = $(window).width() / 1.5 - margin.left - margin.right;
             movie_popularity = {};
             genres_review_counter = {};
             max_num_reviews = 0;
@@ -350,7 +361,6 @@
 
         // dataset: userId,movieId,rating,timestamp
         function preProcessRatings(data) {
-            console.log()
             for (let i = 0; i < data.length; i++) {
                 movie_id = data[i].movieId
                 if (document.getElementById('movieselect').style.display == 'block' && !selected_movies.has(movie_id) ||
@@ -542,13 +552,14 @@
         function drawWordCloud(tags) {
             fill = d3.scaleOrdinal(d3.schemeCategory10);
 
+            cl_height = parseInt(height) + margin.bottom + margin.top + parseInt(max_num_tags) * 0.7
+            cl_width = width + margin.left + margin.right
             d3.layout.cloud()
-                .size([width, height])
+                .size([cl_width, cl_height])
                 .words(
                     tags.map(function (tag) {
                         return { text: tag[0], size: tag[1] };
                     }))
-                .padding(2)
                 .font("Impact")
                 .fontSize(function (tag) {
                     return tag.size;
@@ -559,10 +570,10 @@
             function drawTags(tags) {
                 d3.select("#word_cloud_tags")
                     .append("svg")
-                    .attr("width", width)
-                    .attr("height", height)
+                    .attr("width", cl_width)
+                    .attr("height", cl_height)
                     .append("g")
-                    .attr("transform", "translate(" + [width >> 1, height >> 1] + ")")
+                    .attr("transform", "translate(" + [cl_width >> 1, cl_height >> 1] + ")")
                     .selectAll("text")
                     .data(tags)
                     .enter()
@@ -632,7 +643,6 @@
                 .style("opacity", "0");
 
             var lines = document.getElementsByClassName('line');
-            console.log(lines)
             var mousePerLine = mouseG.selectAll('.mouse-per-line')
                 .data(Object.entries(data))
                 .enter()
@@ -674,7 +684,6 @@
                 })
                 .on('mousemove',(event)=> { // mouse moving over canvas
                     var mouse = d3.pointer(event);
-                    console.log(mouse)
                     d3.select(".mouse-line")
                         .attr("d", function () {
                             var d = "M" + mouse[0] + "," + height;
@@ -684,7 +693,6 @@
 
                     d3.selectAll(".mouse-per-line")
                         .attr("transform", function (d, i) {
-                            console.log(width / mouse[0])
                             var xDate = x.invert(mouse[0]),
                                 bisect = d3.bisector(function (d) { return new Date(d[0]); }).right;
                             idx = bisect(d.values, xDate);
@@ -749,7 +757,7 @@
             if (min == max) {
                 max += 1
             }
-            scaleData(20, 40, min, max + 1, tags)
+            scaleData(17, 45, min, max + 1, tags)
             return tags
         }
 
@@ -866,9 +874,11 @@
             max_num_tags = document.getElementById("num_tags").value;
             range = document.getElementById('slider').value.split(',');
             filter_min_date = new Date(range[0]);
-            console.log(filter_min_date);
-
             filter_max_date = new Date(range[1]);
+
+            if (range[0] == range[1]) {
+                filter_max_date = new Date((parseInt(range[1])+1).toString());
+            }
 
             if (document.getElementById('genreselect').style.display == 'block') {
                 sel_genres_obs = $('.genre-select').select2('data');
