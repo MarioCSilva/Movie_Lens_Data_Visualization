@@ -2,6 +2,10 @@ body {
   font-family: Helvetica;
 }
 
+.singleGraph {
+  padding-top: 85px;
+}
+
 .sidenav {
   text-align:center;
   height: 100%;

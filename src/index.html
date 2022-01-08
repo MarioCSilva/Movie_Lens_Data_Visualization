@@ -23,11 +23,18 @@
 
     <div class="sidenav">
         <h1>VISUALIZATIONS</h1>
-        <span><a class="effect-1" href="#barchart_genres"><i class='fas fa-caret-right'></i> Bar Chart</a></span>
-        <span><a class="effect-1" href="#box_plot_popularity"><i class='fas fa-caret-right'></i> Box Plot</a></span>
-        <span><a class="effect-1" href="#lineplot_genres"><i class='fas fa-caret-right'></i> Time Line Plot</a></span>
-        <span><a class="effect-1" href="#scatter_movies"><i class='fas fa-caret-right'></i> Scatter Plot</a></span>
-        <span><a class="effect-1" href="#word_cloud_tags"><i class='fas fa-caret-right'></i> Word Cloud</a></span>
+        <span><a class="effect-1" href="#barchart_genres"><i class='fas fa-caret-right'></i> Number of
+                Ratings</a></span>
+        <span><a class="effect-1" href="#lineplot_num"><i class='fas fa-caret-right'></i> Number of Ratings
+                Evolution</a></span>
+        <span><a class="effect-1" href="#box_plot_popularity"><i class='fas fa-caret-right'></i> Average Ratings
+                Distribution</a></span>
+        <span><a class="effect-1" href="#lineplot_avg"><i class='fas fa-caret-right'></i> Average Ratings
+                Evolution</a></span>
+        <span><a class="effect-1" href="#scatter_movies"><i class='fas fa-caret-right'></i> Popularity
+                Overview</a></span>
+        <span><a class="effect-1" href="#word_cloud_tags"><i class='fas fa-caret-right'></i> Most Common
+                Opinions</a></span>
 
         <hr style="margin: 30px 0px 30px 0px; color: white; border:1px solid #fff">
 
@@ -84,23 +91,28 @@
             <div class="barload barload8"></div>
         </div>
 
+        <h1 style="text-align: center;">Movies & Genres Popularity</h1>
+
         <div class="legendmain"></div>
 
-        <div id="dataGraphs">
-            <div id="barchart_genres">
-                <h3>Bar Chart</h3>
+        <div id="dataGraphs" style="text-align: center;">
+            <div id="barchart_genres" class="singleGraph">
+                <h3>Number of Ratings</h3>
             </div>
-            <div id="box_plot_popularity">
-                <h3>Box Plot</h3>
+            <div id="lineplot_num" class="singleGraph">
+                <h3>Number of Ratings Evolution</h3>
             </div>
-            <div id="lineplot_genres">
-                <h3>Time Line Plot</h3>
+            <div id="box_plot_popularity" class="singleGraph">
+                <h3>Ratings Distribuition</h3>
             </div>
-            <div id="scatter_movies">
-                <h3>Scatter Plot</h3>
+            <div id="lineplot_avg" class="singleGraph">
+                <h3>Average Ratings Evolution</h3>
             </div>
-            <div id="word_cloud_tags">
-                <h3>Word Cloud</h3>
+            <div id="scatter_movies" class="singleGraph">
+                <h3>Popularity Overview</h3>
+            </div>
+            <div id="word_cloud_tags" class="singleGraph">
+                <h3>Most Common Opinions</h3>
             </div>
         </div>
 
@@ -129,8 +141,8 @@
         rangeSlider();
 
         var movie_popularity, genres_review_counter, max_num_reviews, colorScale,
-            max_item_num_reviews, min_time, max_time, max_reviews, filter_max_date, filter_min_date,
-            barchart_svg, lineplot_svg, scatter_svg, box_plot_svg;
+            max_item_num_reviews, min_time, max_time, max_reviews, max_avg_rat, min_avg_rat, filter_max_date, filter_min_date,
+            barchart_svg, lineplot_svg_avg, lineplot_svg_num, scatter_svg, box_plot_svg;
 
 
         // set the dimensions and margins of the graph
@@ -147,16 +159,19 @@
             min_time = new Date();
             max_time = new Date('1750');
             max_reviews = 0;
+            max_avg_rat = 0;
+            min_avg_rat = 5;
 
             d3.select("#barchart_genres").select("svg").remove()
-            d3.select("#lineplot_genres").select("svg").remove()
+            d3.select("#lineplot_num").select("svg").remove()
+            d3.select("#lineplot_avg").select("svg").remove()
             d3.select("#scatter_movies").select("svg").remove()
             d3.select("#box_plot_popularity").select("svg").remove()
             d3.select("#word_cloud_tags").select("svg").remove()
             d3.select('.legendmain').select("svg").remove()
 
             colorScale = d3.scaleOrdinal(
-                ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
+                ['#FF6633', '#FFB399', '#FF33FF', '#1AB399', '#00B3E6',
                     '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D',
                     '#E6B3B3', '#6680B3', '#66991A', '#FF99E6', '#CCFF1A',
                     '#FF1A66', '#E6331A', '#33FFCC', '#B366CC', '#4D8000',
@@ -165,7 +180,7 @@
                     '#4D8066', '#809980', '#E6FF80', '#1AFF33', '#999933',
                     '#FF3380', '#CCCC00', '#66E64D', '#4D80CC', '#9900B3',
                     '#E64D66', '#4DB380', '#FF4D4D', '#99E6E6', '#6666FF',
-                    '#4DB3FF', '#1AB399'])
+                    '#4DB3FF', '#FFFF99'])
                 .domain(selected_genres ? selected_genres : selected_movies);
 
             initLegend()
@@ -208,7 +223,6 @@
             }
         }
 
-
         function drawBoxPlot(items_ratings) {
 
             var xScale = d3.scalePoint()
@@ -223,7 +237,7 @@
             box_plot_svg = d3.select("#box_plot_popularity")
                 .append("svg")
                 .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
+                .attr("height", height + margin.top + margin.bottom + 100)
                 .append("g")
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
@@ -240,6 +254,14 @@
                 .attr("stroke", "#000")
                 .attr("stroke-width", 1)
                 .attr("fill", "none");
+
+            box_plot_svg.append("g")
+                .attr("transform", "translate(" + -48 + "," + height / 2 + ")")
+                .append('text')
+                .attr('text-anchor', 'middle')
+                .attr('transform', 'rotate(-90)')
+                .text("Rating Scale")
+                .style("font-size", "15px")
 
             var rects = g.selectAll("rect")
                 .data(Object.entries(items_ratings))
@@ -299,7 +321,10 @@
 
             box_plot_svg.append("g")
                 .attr("transform", "translate(0," + height + ")")
-                .call(d3.axisBottom(xScale));
+                .call(d3.axisBottom(xScale))
+                .selectAll("text")
+                .attr("transform", "translate(-10,0)rotate(-45)")
+                .style("text-anchor", "end");
 
             box_plot_svg.append("g")
                 .call(d3.axisLeft(yScale));
@@ -315,44 +340,136 @@
             scatter_svg = d3.select("#scatter_movies")
                 .append("svg")
                 .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
+                .attr("height", height + margin.top + margin.bottom + 15)
                 .append("g")
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
-            scatter_svg.append("g")
+            var xAxis = scatter_svg.append("g")
                 .attr("transform", `translate(0, ${height})`)
                 .call(d3.axisBottom(x));
+
+            scatter_svg.append("g")
+                .attr("transform", "translate(" + (width) / 2 + "," + (height + 40) + ")")
+                .append('text')
+                .attr('text-anchor', 'middle')
+                .text("Number of Ratings")
+                .style("font-size", "15px")
 
             const y = d3.scaleLinear()
                 .domain([0, 5])
                 .range([height, 0]);
 
-            scatter_svg.append("g")
+            var yAxis = scatter_svg.append("g")
                 .call(d3.axisLeft(y));
 
+            // Set the zoom and Pan features: how much you can zoom, on which part, and what to do when there is a zoom
+            var zoom = d3.zoom()
+                .scaleExtent([.5, 20])  // This control how much you can unzoom (x0.5) and zoom (x20)
+                .extent([[0, 0], [width, height]])
+                .on("zoom", (event) => updateChart(event));
+
+            scatter_svg.append("g")
+                .attr("transform", "translate(" + -48 + "," + height / 2 + ")")
+                .append('text')
+                .attr('text-anchor', 'middle')
+                .attr('transform', 'rotate(-90)')
+                .text("Rating Scale")
+                .style("font-size", "15px")
+                
+            
+            // A function that updates the chart when the user zoom and thus new boundaries are available
+            function updateChart(event) {
+                // recover the new scale
+                var newX = event.transform.rescaleX(x);
+                var newY = event.transform.rescaleY(y);
+
+                // update axes with these new boundaries
+                xAxis.call(d3.axisBottom(newX))
+                yAxis.call(d3.axisLeft(newY))
+
+                // update circle position
+                scatter_svg
+                    .selectAll("circle")
+                    .attr('cx', function(d) {return newX(d[1].num_reviews)})
+                    .attr('cy', function(d) {return newY(d[1].avg)});
+            }
+
+            const tooltip = d3.select("#scatter_movies")
+                .append("div")
+                .style("opacity", 0)
+                .attr("class", "tooltip")
+                .style("background-color", "white")
+                .style("border", "solid")
+                .style("border-width", "1px")
+                .style("border-radius", "5px")
+                .style("padding", "10px")
+
+
+            // A function that change this tooltip when the user hover a point.
+            // Its opacity is set to 1: we can now see it. Plus it set the text and position of tooltip depending on the datapoint (d)
+            const mouseover = function (event, d) {
+                tooltip
+                    .html(`<p style="font-size: 18px; width: 50%; margin:auto">${movies[d[0]].title}</p>
+                    <p style="font-size: 18px; width: 50%; margin:auto">Average Rating: ${(d[1].avg).toFixed(2)}</p>
+                        <p style="font-size: 18px; width: 50%; margin:auto">Number of Ratings: ${d[1].num_reviews}</p>`)
+                    .style("left", (event.x) / 2 + "px")
+                    .style("top", (event.y) / 2 + "px")
+                    .style("opacity", 1)
+            }
+            const mouseout = function (event, d) {
+                tooltip
+                    .style("opacity", 0)
+            }
+            // A function that change this tooltip when the leaves a point: just need to set opacity to 0 again
+            const mouseleave = function (event, d) {
+                tooltip
+                    .transition()
+                    .duration(200)
+                    .style("opacity", 0)
+            }
+              // Add a clipPath: everything out of this area won't be drawn.
+            var clip = scatter_svg.append("defs").append("SVG:clipPath")
+                .attr("id", "clip")
+                .append("SVG:rect")
+                .attr("width", width )
+                .attr("height", height )
+                .attr("x", 0)
+                .attr("y", 0);
+            // This add an invisible rect on top of the chart area. This rect can recover pointer events: necessary to understand when the user zoom
+            scatter_svg.append("rect")
+                .attr("width", width)
+                .attr("height", height)
+                .style("fill", "none")
+                .style("pointer-events", "all")
+                .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+                .call(zoom)
             // Add dots
             scatter_svg.append('g')
+                .attr("clip-path", "url(#clip)")
                 .selectAll("dot")
-                .data(Object.values(movie_popularity).entries())
+                .data(Object.entries(movie_popularity))
                 .join("circle")
                 .attr("cx", function (d) { return x(d[1].num_reviews); })
                 .attr("cy", function (d) { return y(d[1].avg); })
-                .attr("r", 1.5)
-                .style("fill", "#69b3a2")
+                .attr("r", function (d) { return (document.getElementById('genreselect').style.display == 'block') ? 2 : 6 })
+                .style("fill", function (d) { return (document.getElementById('genreselect').style.display == 'block') ? "#69b3a2" : colorScale(d[0]) })
+                .on("mouseover", mouseover)
+                .on("mouseout", mouseout)
+                .on("mouseleave", mouseleave)
+
         }
 
 
         function parseTimestamp(timestamp, date_obj_format = false) {
-            timestamp = parseInt(timestamp);
+            timestamp = parseFloat(timestamp);
             let u = new Date(timestamp * 1000);
             if (date_obj_format) {
                 return u;
             }
-            let temp = parseInt(u.getMonth() + 1);
+            let temp = parseFloat(u.getMonth() + 1);
             if (temp < 10) {
                 temp = '0' + temp;
             }
-
             return u.getFullYear() +
                 '-' + (temp)
         }
@@ -375,22 +492,21 @@
                 date = parseTimestamp(data[i].timestamp, false);
                 if (!movie_popularity[movie_id]) {
                     movie_popularity[movie_id] = {
-                        'avg': parseInt(data[i].rating),
+                        'avg': parseFloat(data[i].rating),
                         'num_reviews': 1,
-                        'ratings': [parseInt(data[i].rating)],
+                        'ratings': [parseFloat(data[i].rating)],
                         'dates': {}
                     }
                     movie_popularity[movie_id].dates[date] = [data[i].rating];
                 } else {
                     movie_popularity[movie_id].num_reviews = movie_popularity[movie_id].num_reviews + 1
-                    movie_popularity[movie_id].ratings.push(parseInt(data[i].rating))
+                    movie_popularity[movie_id].ratings.push(parseFloat(data[i].rating))
                     if (movie_popularity[movie_id].num_reviews > max_num_reviews) {
                         max_num_reviews = movie_popularity[movie_id].num_reviews
                     }
                     if (!movie_popularity[movie_id].dates[date]) {
                         movie_popularity[movie_id].dates[date] = [data[i].rating];
-                    }
-                    else {
+                    } else {
                         movie_popularity[movie_id].dates[date].push(data[i].rating);
                     }
 
@@ -402,7 +518,6 @@
                 sum = ratings.reduce((a, b) => a + b, 0)
                 movie_popularity[movie].avg = sum / ratings.length
             }
-
             return movie_popularity
         }
 
@@ -418,13 +533,14 @@
                             continue
                         }
                         if (!items_ratings[genre]) {
-                            items_ratings[genre] = { 'ratings': movie_data.ratings.filter(Number), 'reviewstime': {} }
+                            items_ratings[genre] = { 'ratings': movie_data.ratings.filter(Number), 'reviewstime': {}, 'total_ratings': {} }
                         } else {
                             items_ratings[genre].ratings.push(...movie_data.ratings.filter(Number))
                         }
                         dates = movie_data.dates;
                         for (let date in dates) {
                             all_reviews = dates[date].length;
+                            ratings = dates[date]
                             date = parseTime(date);
                             if (max_time < date) {
                                 max_time = date;
@@ -438,8 +554,11 @@
                             else {
                                 items_ratings[genre].reviewstime[date] += all_reviews
                             }
-                            if (max_reviews < items_ratings[genre].reviewstime[date]) {
-                                max_reviews = items_ratings[genre].reviewstime[date];
+                            total_rat = ratings.reduce((a, b) => parseFloat(a) + parseFloat(b), 0)
+                            if (!items_ratings[genre].total_ratings[date]) {
+                                items_ratings[genre].total_ratings[date] = parseFloat(total_rat);
+                            } else {
+                                items_ratings[genre].total_ratings[date] = parseFloat(items_ratings[genre].total_ratings[date]) + parseFloat(total_rat);
                             }
                         }
                     }
@@ -448,9 +567,10 @@
                 for (let movie_id of selected_movies) {
                     item = movies[movie_id].title
                     dates = movie_popularity[movie_id].dates;
-                    items_ratings[item] = { 'ratings': movie_popularity[movie_id].ratings.filter(Number), 'reviewstime': {}, 'id': movie_id }
+                    items_ratings[item] = { 'ratings': movie_popularity[movie_id].ratings.filter(Number), 'reviewstime': {}, 'total_ratings': {}, 'id': movie_id }
                     for (let date in dates) {
                         all_reviews = dates[date].length;
+                        ratings = dates[date]
                         date = parseTime(date);
                         if (max_time < date) {
                             max_time = date;
@@ -460,12 +580,14 @@
                         }
                         if (!items_ratings[item].reviewstime[date]) {
                             items_ratings[item].reviewstime[date] = all_reviews;
-                        }
-                        else {
+                        } else {
                             items_ratings[item].reviewstime[date] += all_reviews
                         }
-                        if (max_reviews < items_ratings[item].reviewstime[date]) {
-                            max_reviews = items_ratings[item].reviewstime[date];
+                        total_rat = ratings.reduce((a, b) => a + b, 0)
+                        if (!items_ratings[item].total_ratings[date]) {
+                            items_ratings[item].total_ratings[date] = total_rat;
+                        } else {
+                            items_ratings[item].total_ratings[date] += total_rat;
                         }
                     }
                 }
@@ -475,6 +597,7 @@
                 ratings = item_data.ratings.sort((a, b) => a - b);
                 total = 0
                 rev_time = Object.entries(item_data.reviewstime)
+                tot_rat_time = item_data.total_ratings
                 rev_time = rev_time.sort((a, b) => new Date(a[0]) - new Date(b[0]));
                 num_ratings = ratings.length
                 if (num_ratings > max_item_num_reviews) {
@@ -496,11 +619,33 @@
                 ]
                 obj["whiskers"] = [localMin, localMax];
                 obj["color"] = selected_genres.size > 0 ? colorScale(item) : colorScale(item_data.id);
-                obj["reviewstime"] = {};
+
+                let last_num_ratings = 0;
+                for (let i = 0; i < rev_time.length; i++) {
+                    rev_time[i][1] += last_num_ratings
+                    last_num_ratings = rev_time[i][1]
+                    if (max_reviews < last_num_ratings) {
+                        max_reviews = last_num_ratings;
+                    }
+                }
+                let avg_rat_time = []
+                let last_total_rating = 0;
+                for (let i = 0; i < rev_time.length; i++) {
+                    tot_rat_time[rev_time[i][0]] = parseFloat(tot_rat_time[rev_time[i][0]]) + parseFloat(last_total_rating)
+                    last_total_rating = tot_rat_time[rev_time[i][0]]
+                    avg_rating = tot_rat_time[rev_time[i][0]] / rev_time[i][1]
+                    avg_rat_time.push([rev_time[i][0], avg_rating])
+                    if (max_avg_rat < avg_rating) {
+                        max_avg_rat = avg_rating;
+                    }
+                    if (min_avg_rat > avg_rating) {
+                        min_avg_rat = avg_rating;
+                    }
+                }
                 obj["reviewstime"] = rev_time
+                obj["avg_rat_time"] = avg_rat_time
                 items_ratings[item] = obj;
             }
-
             return items_ratings
         }
 
@@ -517,7 +662,7 @@
             barchart_svg = d3.select("#barchart_genres")
                 .append("svg")
                 .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
+                .attr("height", height + margin.top + margin.bottom + 100)
                 .append("g")
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
@@ -546,13 +691,21 @@
                 .attr("width", x.bandwidth())
                 .attr("height", function (d) { return height - y(d[1].num_ratings); })
                 .attr("fill", function (d) { return d[1].color });
+
+            barchart_svg.append("g")
+                .attr("transform", "translate(" + -48 + "," + height / 2 + ")")
+                .append('text')
+                .attr('text-anchor', 'middle')
+                .attr('transform', 'rotate(-90)')
+                .text("Number of Ratings")
+                .style("font-size", "15px")
         }
 
 
         function drawWordCloud(tags) {
             fill = d3.scaleOrdinal(d3.schemeCategory10);
 
-            cl_height = parseInt(height) + margin.bottom + margin.top + parseInt(max_num_tags) * 0.7
+            cl_height = parseFloat(height) + margin.bottom + margin.top + parseFloat(max_num_tags) * 0.7
             cl_width = width + margin.left + margin.right
             d3.layout.cloud()
                 .size([cl_width, cl_height])
@@ -592,26 +745,28 @@
         }
 
 
-        function drawLinePlot(data) {
+        function drawLinePlot(data, graph_id) {
             let x = d3.scaleTime()
                 .domain([min_time, max_time])
                 .range([0, width]);
 
-            lineplot_svg = d3.select("#lineplot_genres")
+            lineplot_svg = d3.select(graph_id)
                 .append("svg")
                 .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
+                .attr("height", height + margin.top + margin.bottom + 100)
                 .append("g")
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
             lineplot_svg.append("g")
                 .attr("transform", "translate(0," + height + ")")
-                .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%B %Y")).ticks(10));
+                .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%B %Y")).ticks(10))
+                .selectAll("text")
+                .attr("transform", "translate(-10,0)rotate(-45)")
+                .style("text-anchor", "end");
 
             let y = d3.scaleLinear()
-                .domain([0, max_reviews])
+                .domain([(graph_id == "#lineplot_num" ? 0 : (min_avg_rat <= 1 ? 0 : min_avg_rat - 0.5)), (graph_id == "#lineplot_num" ? max_reviews : max_avg_rat)])
                 .range([height, 0]);
-
 
             lineplot_svg.append("g")
                 .call(d3.axisLeft(y));
@@ -622,16 +777,23 @@
                 .enter()
                 .append("path")
                 .attr("fill", "none")
-                .attr("class","line")
+                .attr("class", "line")
                 .attr("stroke", function (d) { return d[1].color; })
                 .attr("stroke-width", 1.5)
                 .attr("d", function (d) {
                     return d3.line()
                         .x(function (d) { return x(new Date(d[0])); })
                         .y(function (d) { return y(+d[1]); })
-                        (d[1].reviewstime)
+                        ((graph_id == "#lineplot_num") ? d[1].reviewstime : d[1].avg_rat_time)
                 })
-                
+            let label = (graph_id == "#lineplot_num") ? "Number of Ratings" : "Rating Scale"
+            lineplot_svg.append("g")
+                .attr("transform", "translate(" + -48 + "," + height / 2 + ")")
+                .append('text')
+                .attr('text-anchor', 'middle')
+                .attr('transform', 'rotate(-90)')
+                .text(label)
+                .style("font-size", "15px")
 
             var mouseG = lineplot_svg.append("g")
                 .attr("class", "mouse-over-effects");
@@ -682,7 +844,7 @@
                     d3.selectAll(".mouse-per-line text")
                         .style("opacity", "1");
                 })
-                .on('mousemove',(event)=> { // mouse moving over canvas
+                .on('mousemove', (event) => { // mouse moving over canvas
                     var mouse = d3.pointer(event);
                     d3.select(".mouse-line")
                         .attr("d", function () {
@@ -696,7 +858,6 @@
                             var xDate = x.invert(mouse[0]),
                                 bisect = d3.bisector(function (d) { return new Date(d[0]); }).right;
                             idx = bisect(d.values, xDate);
-
                             var beginning = 0,
                                 end = lines[i].getTotalLength(),
                                 target = null;
@@ -711,16 +872,13 @@
                                 else if (pos.x < mouse[0]) beginning = target;
                                 else break; //position found
                             }
-
+                            let txt = (graph_id == "#lineplot_num") ? parseInt(y.invert(pos.y)) : y.invert(pos.y).toFixed(2);
                             d3.select(this).select('text')
-                                .text(y.invert(pos.y).toFixed(2))
+                                .text(txt)
                                 .style('font-size', '10px');
-
                             return "translate(" + mouse[0] + "," + pos.y + ")";
                         });
                 });
-
-
         }
 
 
@@ -877,7 +1035,7 @@
             filter_max_date = new Date(range[1]);
 
             if (range[0] == range[1]) {
-                filter_max_date = new Date((parseInt(range[1])+1).toString());
+                filter_max_date = new Date((parseFloat(range[1]) + 1).toString());
             }
 
             if (document.getElementById('genreselect').style.display == 'block') {
@@ -916,7 +1074,8 @@
                     drawScatterPlot(movie_popularity)
                     drawBoxPlot(items_ratings)
                     drawBarChart(items_ratings)
-                    drawLinePlot(items_ratings)
+                    drawLinePlot(items_ratings, '#lineplot_num')
+                    drawLinePlot(items_ratings, '#lineplot_avg')
                     d3.csv("../dataset/tags.csv")
                         .then((data) => {
                             tags = preProcessTags(data);
