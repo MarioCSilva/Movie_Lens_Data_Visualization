@@ -897,10 +897,10 @@
                     document.getElementById('genreselect').style.display == 'block' && !movies[data[i].movieId].genres.some(g => selected_genres.has(g))) {
                     continue
                 }
-                if (!tags[data[i].tag]) {
-                    tags[data[i].tag] = 1;
+                if (!tags[data[i].tag.toLowerCase()]) {
+                    tags[data[i].tag.toLowerCase()] = 1;
                 } else {
-                    tags[data[i].tag] += 1;
+                    tags[data[i].tag.toLowerCase()] += 1;
                 }
             }
 
