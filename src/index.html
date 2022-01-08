@@ -1015,7 +1015,7 @@
             // add text elements right above the rectangle elements
             legendGroups.append('text')
                 .attr('x', legendWidth / 15)
-                .attr('y', legendHeight / 2)
+                .attr('y', 11)
                 .text(d => { return document.getElementById('genreselect').style.display == 'block' ? d : movies[d].title })
                 .attr('font-size', '0.6rem')
                 .attr('fill', '#fff')
