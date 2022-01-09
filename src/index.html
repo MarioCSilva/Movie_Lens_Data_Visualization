@@ -92,27 +92,59 @@
         </div>
 
         <h1 style="text-align: center;">Movies & Genres Popularity</h1>
-
+        <p style="text-align: center; font-size: 20px;">
+            The Popularity of Movies & Movie Genres is related to the feedback given by the users when reviewing the movie. Thus, it is possible to
+            evaluate the popularity given the number of reviews, their ratings and also their content.
+        </p>
+        <p style="text-align: center; font-size: 20px;">
+            On the left side, there is an index of the visualizations and also usefull filters that can be applied on the data.
+        </p>
         <div class="legendmain"></div>
 
         <div id="dataGraphs" style="text-align: center;">
             <div id="barchart_genres" class="singleGraph">
                 <h3>Number of Ratings</h3>
+                <p style="font-size: 20px;">
+                    The bar chart bellow represents the total number of ratings given by users to each genre/movie in the choosen time interval.
+                </p>
             </div>
             <div id="lineplot_num" class="singleGraph">
                 <h3>Number of Ratings Evolution</h3>
+                <p style="font-size: 20px;">
+                    Similar to the representation above, this chart shows how the total number of ratings given by the users to each genre/movie has evolved throughout the
+                    time interval choosen. You may move your mouse over the chart to see the exact number of ratings in a specific date.
+                </p>
             </div>
             <div id="box_plot_popularity" class="singleGraph">
                 <h3>Ratings Distribuition</h3>
+                <p style="font-size: 20px;">
+                    This box plot demonstrates the ratings of each genre/movie in the choosen time interval. This visualization allows to
+                    view a summary of the ratings given, by displaying the minimum, maximum, mediam, and also the first and third quartile. 
+                </p>
             </div>
             <div id="lineplot_avg" class="singleGraph">
                 <h3>Average Ratings Evolution</h3>
+                <p style="font-size: 20px;">
+                    The visualization of the Average Rating to a given movie or movie genre over time can also be done recurring to the line plot below. Besides this,
+                    by moving the mouse over the lineplot it will be presented the exact average rating value on a specific date.
+                </p>
             </div>
             <div id="scatter_movies" class="singleGraph">
                 <h3>Popularity Overview</h3>
+                <p style="font-size: 20px;">
+                    The correlation between the number of ratings given and its average value for each movie is represented below.
+                    It is possible to identify popularity patterns of given genres and also facilitates the comparison of the selected movies. By hovering the dots
+                    in the chart, a box with information about the movie in cause will be presented. Besides this, you may zoom in, or zoom out, in order to select more easily
+                    a specific dot.
+                </p>
             </div>
             <div id="word_cloud_tags" class="singleGraph">
                 <h3>Most Common Opinions</h3>
+                <p style="font-size: 20px;">
+                    To check out the most common opinions on the selected movies/movies Genres a word cloud is presented below. The words with more influence (that
+                    people mostly use to describe the movie) appear with a bigger size than others. On the left hand side you may filter the number of words to appear on 
+                    the word cloud.
+                </p>
             </div>
         </div>
 
@@ -138,13 +170,18 @@
             });
         };
 
+
+        d3.select('.legendmain')
+                .append('p')
+                .text('Legend: Hover to visualize each category.')
+                .style("text-align", "center")
+
         rangeSlider();
 
         var movie_popularity, genres_review_counter, max_num_reviews, colorScale,
             max_item_num_reviews, min_time, max_time, max_reviews, max_avg_rat, min_avg_rat, filter_max_date, filter_min_date,
             barchart_svg, lineplot_svg_avg, lineplot_svg_num, scatter_svg, box_plot_svg;
-
-
+        
         // set the dimensions and margins of the graph
         var margin = { top: 10, right: 30, bottom: 30, left: 60 },
             width = $(window).width() / 1.5 - margin.left - margin.right,
@@ -174,13 +211,13 @@
                 ['#FF6633', '#FFB399', '#FF33FF', '#1AB399', '#00B3E6',
                     '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D',
                     '#E6B3B3', '#6680B3', '#66991A', '#FF99E6', '#CCFF1A',
-                    '#FF1A66', '#E6331A', '#33FFCC', '#B366CC', '#4D8000',
+                    '#E6331A', '#33FFCC', '#4D8000',
                     '#B33300', '#CC80CC', '#66664D', '#991AFF', '#E666FF',
                     '#E666B3', '#33991A', '#CC9999', '#B3B31A', '#00E680',
                     '#4D8066', '#809980', '#E6FF80', '#1AFF33', '#999933',
                     '#FF3380', '#CCCC00', '#66E64D', '#4D80CC', '#9900B3',
                     '#E64D66', '#4DB380', '#FF4D4D', '#99E6E6', '#6666FF',
-                    '#4DB3FF', '#FFFF99'])
+                    '#4DB3FF', '#FFFF99', '#FF1A66', '#B366CC'])
                 .domain(selected_genres ? selected_genres : selected_movies);
 
             initLegend()
@@ -218,8 +255,9 @@
         function preProcessMovies(data) {
             for (let i = 0; i < data.length; i++) {
                 genres = data[i].genres.split('|')
-                movies[data[i].movieId] = { 'title': data[i].title, 'genres': genres }
-                genres.forEach(genre => all_genres.add(genre))
+                m_genres = genres.filter(genre => genre != "(no genres listed)")
+                movies[data[i].movieId] = { 'title': data[i].title, 'genres': m_genres }
+                m_genres.forEach(genre => all_genres.add(genre))
             }
         }
 
@@ -451,7 +489,7 @@
                 .join("circle")
                 .attr("cx", function (d) { return x(d[1].num_reviews); })
                 .attr("cy", function (d) { return y(d[1].avg); })
-                .attr("r", function (d) { return (document.getElementById('genreselect').style.display == 'block') ? 2 : 6 })
+                .attr("r", function (d) { return (document.getElementById('genreselect').style.display == 'block') ? 3 : 6 })
                 .style("fill", function (d) { return (document.getElementById('genreselect').style.display == 'block') ? "#69b3a2" : colorScale(d[0]) })
                 .on("mouseover", mouseover)
                 .on("mouseout", mouseout)
@@ -675,7 +713,7 @@
 
             // Add Y axis
             var y = d3.scaleLinear()
-                .domain([0, max_item_num_reviews])
+                .domain([0, max_item_num_reviews * 1.05])
                 .range([height, 0]);
 
             barchart_svg.append("g")
@@ -687,10 +725,34 @@
                 .append("rect")
                 .attr("class", "bar")
                 .attr("x", function (d) { return x(d[0]); })
-                .attr("y", function (d) { return y(d[1].num_ratings); })
                 .attr("width", x.bandwidth())
+                .attr("y",  d => { return height; })
+                .attr("height", 0)
+                .transition()
+                .duration(750)
+                .delay(function (d, i) {
+                    return i * 150;
+                })
+                .attr("y", function (d) { return y(d[1].num_ratings); })
                 .attr("height", function (d) { return height - y(d[1].num_ratings); })
                 .attr("fill", function (d) { return d[1].color });
+            
+            barchart_svg.selectAll(".label")
+                .data(data)
+                .enter()
+                .append("text")
+                .style("font-size", "10px")
+                .attr("class", "label")
+                .style("display",  d => { return d[0] === null ? "none" : null; })
+                .attr("x", ( d => { return x(d[0]) + (x.bandwidth() / 2) - 10 ; }))
+                .attr("y",  d => { return height; })
+                    .attr("height", 0)
+                        .transition()
+                        .duration(750)
+                        .delay((d, i) => { return i * 150; })
+                .text( d => { return d[1].num_ratings })
+                .attr("y",  d => { return y(d[1].num_ratings) + .1; })
+                .attr("dy", "-.7em"); 
 
             barchart_svg.append("g")
                 .attr("transform", "translate(" + -48 + "," + height / 2 + ")")
@@ -964,6 +1026,7 @@
             const legendHeight = 20;
 
             d3.select('.legendmain').select("svg").remove();
+
 
             const legendSVG = d3.select('.legendmain')
                 .append('svg')
