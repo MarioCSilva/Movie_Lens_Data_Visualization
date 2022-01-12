@@ -1139,7 +1139,7 @@
                     drawBarChart(items_ratings)
                     drawLinePlot(items_ratings, '#lineplot_num')
                     drawLinePlot(items_ratings, '#lineplot_avg')
-                    d3.csv("../dataset/tags.csv")
+                    d3.csv("./dataset/tags.csv")
                         .then((data) => {
                             tags = preProcessTags(data);
                             drawWordCloud(tags);
