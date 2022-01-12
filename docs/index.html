@@ -1130,7 +1130,7 @@
 
         function draw() {
             handleLoading(true);
-            d3.csv("../dataset/ratings.csv")
+            d3.csv("./dataset/ratings.csv")
                 .then((data) => {
                     movie_popularity = preProcessRatings(data)
                     items_ratings = preProcessItemsPopularity(movie_popularity)
@@ -1153,7 +1153,7 @@
         initGlobalVariables()
 
         // initial load of data that only will be executed once
-        d3.csv("../dataset/movies.csv")
+        d3.csv("./dataset/movies.csv")
             .then((data) => {
                 preProcessMovies(data)
                 addFiltersAndLegend()
